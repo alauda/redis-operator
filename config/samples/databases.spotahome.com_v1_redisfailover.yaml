@@ -1,0 +1,160 @@
+apiVersion: databases.spotahome.com/v1
+kind: RedisFailover
+metadata:
+  name: redissentinel
+spec:
+  auth:
+    secretPath: redis-redissentinel-6fp8p
+  expose:
+    enableNodePort: true
+  redis:
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+            - key: app.kubernetes.io/component
+              operator: In
+              values:
+              - redis
+            - key: redisfailovers.databases.spotahome.com/name
+              operator: In
+              values:
+              - redissentinel
+          topologyKey: kubernetes.io/hostname
+    customConfig:
+      acllog-max-len: "128"
+      active-defrag-cycle-max: "25"
+      active-defrag-cycle-min: "1"
+      active-defrag-ignore-bytes: 100mb
+      active-defrag-max-scan-fields: "1000"
+      active-defrag-threshold-lower: "10"
+      active-defrag-threshold-upper: "100"
+      active-expire-effort: "1"
+      activedefrag: "no"
+      activerehashing: "yes"
+      aof-load-truncated: "yes"
+      aof-rewrite-incremental-fsync: "yes"
+      aof-use-rdb-preamble: "yes"
+      appendfsync: everysec
+      appendonly: "no"
+      auto-aof-rewrite-min-size: 64mb
+      auto-aof-rewrite-percentage: "100"
+      client-output-buffer-limit: normal 0 0 0 slave 268435456 67108864 60 pubsub
+        33554432 8388608 60
+      client-query-buffer-limit: 1gb
+      databases: "16"
+      dynamic-hz: "yes"
+      hash-max-ziplist-entries: "512"
+      hash-max-ziplist-value: "64"
+      hll-sparse-max-bytes: "3000"
+      hz: "10"
+      io-threads: "4"
+      io-threads-do-reads: "no"
+      jemalloc-bg-thread: "yes"
+      latency-monitor-threshold: "0"
+      lazyfree-lazy-eviction: "no"
+      lazyfree-lazy-expire: "no"
+      lazyfree-lazy-server-del: "no"
+      lazyfree-lazy-user-del: "no"
+      lfu-decay-time: "1"
+      lfu-log-factor: "10"
+      list-compress-depth: "0"
+      list-max-ziplist-size: "-2"
+      loglevel: notice
+      lua-time-limit: "5000"
+      maxclients: "10000"
+      maxmemory-policy: noeviction
+      maxmemory-samples: "5"
+      min-replicas-max-lag: "10"
+      min-replicas-to-write: "0"
+      no-appendfsync-on-rewrite: "no"
+      oom-score-adj: "no"
+      oom-score-adj-values: 0 200 800
+      proto-max-bulk-len: 512mb
+      rdb-save-incremental-fsync: "yes"
+      rdbchecksum: "yes"
+      rdbcompression: "yes"
+      repl-backlog-size: "21474836"
+      repl-backlog-ttl: "3600"
+      repl-disable-tcp-nodelay: "no"
+      repl-diskless-load: disabled
+      repl-diskless-sync: "no"
+      repl-diskless-sync-delay: "5"
+      repl-ping-replica-period: "10"
+      repl-timeout: "60"
+      replica-ignore-maxmemory: "yes"
+      replica-lazy-flush: "no"
+      replica-serve-stale-data: "yes"
+      save: 60 10000 300 100 600 1
+      set-max-intset-entries: "512"
+      slowlog-log-slower-than: "10000"
+      slowlog-max-len: "128"
+      stop-writes-on-bgsave-error: "yes"
+      stream-node-max-bytes: "4096"
+      stream-node-max-entries: "100"
+      tcp-backlog: "511"
+      tcp-keepalive: "300"
+      timeout: "0"
+      tracking-table-max-keys: "1000000"
+      zset-max-ziplist-entries: "128"
+      zset-max-ziplist-value: "64"
+    exporter:
+      enabled: true
+      image: oliver006/redis_exporter:v1.55.0
+    image: redis:6.0-alpine
+    replicas: 2
+    resources:
+      limits:
+        cpu: "1"
+        memory: 2Gi
+      requests:
+        cpu: "1"
+        memory: 2Gi
+    storage:
+      keepAfterDeletion: true
+      persistentVolumeClaim:
+        metadata:
+          labels:
+            app.kubernetes.io/name: redissentinel
+            app.kubernetes.io/part-of: redis-failover
+            middleware.instance/name: redissentinel
+            middleware.instance/type: redis-failover
+          name: redis-data
+        spec:
+          accessModes:
+          - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+          storageClassName: sc-topolvm
+          volumeMode: Filesystem
+        status: {}
+  sentinel:
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+            - key: app.kubernetes.io/component
+              operator: In
+              values:
+              - sentinel
+            - key: redisfailovers.databases.spotahome.com/name
+              operator: In
+              values:
+              - redissentinel
+          topologyKey: kubernetes.io/hostname
+    customConfig:
+      down-after-milliseconds: "30000"
+      failover-timeout: "180000"
+      parallel-syncs: "1"
+    image: redis:6.0-alpine
+    replicas: 3
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi

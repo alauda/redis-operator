@@ -1,0 +1,11 @@
+apiVersion: redis.middleware.alauda.io/v1
+kind: RedisClusterBackup
+metadata:
+  labels:
+    redis.kun/name: rediscluster
+  name: rediscluster-1
+spec:
+  source:
+    redisClusterName: rediscluster
+    storageClassName: gp3
+  storage: 6Gi

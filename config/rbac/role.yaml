@@ -1,0 +1,289 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - configmaps
+  - configmaps/finalizers
+  - endpoints
+  - persistentvolumeclaims
+  - persistentvolumeclaims/finalizers
+  - pods
+  - pods/exec
+  - secrets
+  - secrets/finalizers
+  - services
+  - services/finalizers
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - '*'
+  resources:
+  - configmaps
+  - endpoints
+  - pods
+  - pods/exec
+  - services
+  - services/finalizers
+  verbs:
+  - '*'
+- apiGroups:
+  - '*'
+  resources:
+  - events
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - '*'
+  resources:
+  - nodes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - '*'
+  resources:
+  - serviceaccounts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  - deployments
+  - deployments/finalizers
+  - replicasets
+  - statefulsets
+  - statefulsets/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  - cronjobs/finalizers
+  - jobs
+  - jobs/finalizers
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - middleware.alauda.io
+  resources:
+  - redis
+  verbs:
+  - '*'
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  - poddisruptionbudgets/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - redis.kun
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - redis.kun
+  resources:
+  - distributedredisclusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - redis.kun
+  resources:
+  - distributedredisclusters/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - redis.kun
+  resources:
+  - distributedredisclusters/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - redis.middleware.alauda.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - redis.middleware.alauda.io
+  resources:
+  - redisbackups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - redis.middleware.alauda.io
+  resources:
+  - redisbackups/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - redis.middleware.alauda.io
+  resources:
+  - redisbackups/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - redis.middleware.alauda.io
+  resources:
+  - redisclusterbackups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - redis.middleware.alauda.io
+  resources:
+  - redisclusterbackups/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - redis.middleware.alauda.io
+  resources:
+  - redisclusterbackups/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - redis.middleware.alauda.io
+  resources:
+  - redisusers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - redis.middleware.alauda.io
+  resources:
+  - redisusers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - redis.middleware.alauda.io
+  resources:
+  - redisusers/status
+  verbs:
+  - get
+  - patch
+  - update

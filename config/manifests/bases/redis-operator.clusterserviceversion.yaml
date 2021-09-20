@@ -1,0 +1,547 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: redis-operator.vX.Y.Z
+  namespace: placeholder
+  labels:
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.arm64: supported
+    name.operator: redis-operator
+    team.operator: dataservices
+  annotations:
+    provider: "platform"
+    provider-type: "platform"
+    alm-examples: '[]'
+    resources: |
+      limits:
+        cpu: 700m
+        memory: 800Mi
+      requests:
+        cpu: 700m
+        memory: 800Mi
+    categories: 'Database'
+    description: "Redis is a high-performance, in-memory data storage system widely used for building highly scalable, fast-responding, real-time data applications."
+    support: 'Alauda'
+    capabilities: Deep Insights
+    operators.operatorframework.io/builder: operator-sdk-v1.33.0
+    operators.operatorframework.io/project_layout: go
+    olm.skipRange: '>0.3.0 <__CURRENT_VERSION__'
+spec:
+  minKubeVersion: "1.17.0"
+  apiservicedefinitions: {}
+  displayName: Redis
+  description: "# Redis\n## Introduction\nRedis is a high-performance, in-memory data storage system widely used for building highly scalable, fast-responding, real-time data applications.\n## Supported Versions\nRedis 5.0, 6.0, 7.2\n## Supported Features\nThe Redis provided by the platform is fully compatible with the open-source community version, and it has the following advantages:\n1. Out-of-the-box: Based on the Cloud Native Success Platform with cluster, storage, network, and other management capabilities, it minimizes the need to focus on underlying infrastructure. It enables one-click deployment of Kafka instances, visual topic and user management, allowing for rapid integration with business applications.\n2. Unified Operations and Management: Provides a comprehensive set of inspection, logging, monitoring, alerting, and other operational mechanisms.<br>\ta. Comprehensive health inspection, with alerts and timely recovery for unhealthy states, ensure service availability and business continuity.<br>\tb. Automatic fault detection and alerts, with the ability to configure monitoring data transmission rules. Receive Kafka load status and exception information via SMS, email, etc., reducing management costs.\n3. Parameter Templates: Provides predefined system parameter templates to help users quickly create Redis instances for maximum performance and stability. Customers can also customize exclusive templates based on the platform's offerings.\n4. Data Security: Provides private delivery, a comprehensive security reinforcement system, including access control, data encryption, and vulnerability fixes, to assist customers in better securing their data.\n5. Updates and Upgrades: Regularly updates Redis versions, including the latest community editions, along with your value-added features and improvements, ensuring users can always access the latest features and fixes.\n6. High Availability and Disaster Recovery: Provides high availability and disaster recovery solutions, along with an SLA consistent with the 'Cloud Native Success Platform,' ensuring the stable operation of users' Redis services and professional support in case of issues.\n7. Multi-Language Support: Kafka client libraries support various programming languages, including Python、Java、Node.js、C#, etc.\n8. Compatible with open-source community version: Applications can be migrated to the cloud without any modifications.<br><br>"
+  maturity: alpha
+  version: 0.0.0
+  keywords:
+    - Redis
+    - Sentinel
+    - Cluster
+    - Database
+  provider:
+    name: System
+  icon:
+    - base64data: >-
+        PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iNTZweCIgaGVpZ2h0PSI0OHB4IiB2aWV3Qm94PSIwIDAgNTYgNDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8dGl0bGU+cmVkaXNfd3g0ODwvdGl0bGU+CiAgICA8ZyBpZD0iT3BlcmF0b3JzLeiuvuiuoeaWueahiC3noa7lrprniYgiIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPgogICAgICAgIDxnIGlkPSIwMS1BQ1AtMi54Xy3kuK3pl7Tku7Zf5YiX6KGoIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMTA4Mi4wMDAwMDAsIC0xNjczLjAwMDAwMCkiIGZpbGwtcnVsZT0ibm9uemVybyI+CiAgICAgICAgICAgIDxnIGlkPSJHcm91cC04OCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTkuMDAwMDAwLCAxMTE1LjAwMDAwMCkiPgogICAgICAgICAgICAgICAgPGcgaWQ9Ikdyb3VwLTg3IiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNDAuMDAwMDAwLCAyNjUuMDAwMDAwKSI+CiAgICAgICAgICAgICAgICAgICAgPGcgaWQ9Ikdyb3VwLTU4IiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLjAwMDAwMCwgMjczLjAwMDAwMCkiPgogICAgICAgICAgICAgICAgICAgICAgICA8ZyBpZD0iR3JvdXAtMTgtQ29weS0yIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg3MDIuMDAwMDAwLCAwLjAwMDAwMCkiPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgPGcgaWQ9Ikdyb3VwLTQ5IiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyMC4wMDAwMDAsIDIwLjAwMDAwMCkiPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDxnIGlkPSJyZWRpc193eDQ4IiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg2MS4wMDAwMDAsIDAuMDAwMDAwKSI+CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik01My42NjYxODE4LDM2Ljg2MDI5MDkgQzUwLjY4NTM4MTgsMzguNDEzOTYzNiAzNS4yNDQyMTgyLDQ0Ljc2MjgzNjQgMzEuOTU2ODcyNyw0Ni40NzY2NTQ1IEMyOC42Njk1MjczLDQ4LjE5MDY5MDkgMjYuODQzMzQ1NSw0OC4xNzQxMDkxIDI0LjI0NjMyNzMsNDYuOTMyNjU0NSBDMjEuNjQ5NTI3Myw0NS42OTEyIDUuMjE3MzgxODIsMzkuMDUzNjcyNyAyLjI1NzMwOTA5LDM3LjYzODc2MzYgQzAuNzc4MDM2MzY0LDM2LjkzMTg1NDUgMCwzNi4zMzQ5MDkxIDAsMzUuNzcxMTI3MyBMMCwzMC4xMjU0NTQ1IEMwLDMwLjEyNTQ1NDUgMjEuMzkyNzI3MywyNS40NjgzNjM2IDI0Ljg0NjMyNzMsMjQuMjI5MzA5MSBDMjguMjk5NzA5MSwyMi45OTAyNTQ1IDI5LjQ5Nzk2MzYsMjIuOTQ1NTI3MyAzMi40MzY4NzI3LDI0LjAyMjAzNjQgQzM1LjM3NjIxODIsMjUuMDk4OTgxOCA1Mi45NDk4OTA5LDI4LjI2OTYgNTUuODU0NTQ1NSwyOS4zMzM0NTQ1IEw1NS44NTMyMzY0LDM0Ljg5OTI3MjcgQzU1Ljg1MzY3MjcsMzUuNDU3MzgxOCA1NS4xODM0MTgyLDM2LjA2OTYgNTMuNjY2MTgxOCwzNi44NjAyOTA5IiBpZD0iU2hhcGUiIGZpbGw9IiM5MTI2MjYiPjwvcGF0aD4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgPHBhdGggZD0iTTUzLjY2NTA5MDksMzEuMjQ4IEM1MC42ODQ1MDkxLDMyLjgwMTAxODIgMzUuMjQzNzgxOCwzOS4xNTAxMDkxIDMxLjk1NjQzNjQsNDAuODYzNzA5MSBDMjguNjY5MzA5MSw0Mi41Nzc5NjM2IDI2Ljg0MzEyNzMsNDIuNTYxMTYzNiAyNC4yNDYzMjczLDQxLjMxOTcwOTEgQzIxLjY0OTMwOTEsNDAuMDc5MTI3MyA1LjIxNzgxODE4LDMzLjQ0MDUwOTEgMi4yNTc5NjM2NCwzMi4wMjY0NzI3IEMtMC43MDE4OTA5MDksMzAuNjExNTYzNiAtMC43NjM4NTQ1NDUsMjkuNjM3ODE4MiAyLjE0MzYzNjM2LDI4LjQ5OTM0NTUgQzUuMDUxMTI3MjcsMjcuMzYwNDM2NCAyMS4zOTI1MDkxLDIwLjk0OTE2MzYgMjQuODQ2NTQ1NSwxOS43MTAxMDkxIEMyOC4yOTk5MjczLDE4LjQ3MTQ5MDkgMjkuNDk3OTYzNiwxOC40MjYzMjczIDMyLjQzNjg3MjcsMTkuNTAzMjcyNyBDMzUuMzc2LDIwLjU3OTc4MTggNTAuNzI0NjU0NSwyNi42ODkwOTA5IDUzLjYyODg3MjcsMjcuNzUyNzI3MyBDNTYuNTM0MTgxOCwyOC44MTc2NzI3IDU2LjY0NTY3MjcsMjkuNjk0NTQ1NSA1My42NjUwOTA5LDMxLjI0OCIgaWQ9IlNoYXBlIiBmaWxsPSIjQzYzMDJCIj48L3BhdGg+CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDxwYXRoIGQ9Ik01My42NjYxODE4LDI3LjcyNTIzNjQgQzUwLjY4NTM4MTgsMjkuMjc5MTI3MyAzNS4yNDQyMTgyLDM1LjYyNzc4MTggMzEuOTU2ODcyNywzNy4zNDIyNTQ1IEMyOC42Njk1MjczLDM5LjA1NTYzNjQgMjYuODQzMzQ1NSwzOS4wMzkwNTQ1IDI0LjI0NjMyNzMsMzcuNzk3NiBDMjEuNjQ5MzA5MSwzNi41NTY4IDUuMjE3MzgxODIsMjkuOTE4NjE4MiAyLjI1NzMwOTA5LDI4LjUwMzcwOTEgQzAuNzc4MDM2MzY0LDI3Ljc5NjggMCwyNy4yMDA3MjczIDAsMjYuNjM2NzI3MyBMMCwyMC45OTA0IEMwLDIwLjk5MDQgMjEuMzkyNzI3MywxNi4zMzM1MjczIDI0Ljg0NjMyNzMsMTUuMDk0NDcyNyBDMjguMjk5NzA5MSwxMy44NTU0MTgyIDI5LjQ5Nzk2MzYsMTMuODEwNDcyNyAzMi40MzY4NzI3LDE0Ljg4NzIgQzM1LjM3NjQzNjQsMTUuOTYzOTI3MyA1Mi45NTAxMDkxLDE5LjEzMzg5MDkgNTUuODU0NTQ1NSwyMC4xOTc5NjM2IEw1NS44NTMyMzY0LDI1Ljc2NDQzNjQgQzU1Ljg1MzY3MjcsMjYuMzIyMzI3MyA1NS4xODM0MTgyLDI2LjkzNDU0NTUgNTMuNjY2MTgxOCwyNy43MjUyMzY0IiBpZD0iU2hhcGUiIGZpbGw9IiM5MTI2MjYiPjwvcGF0aD4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgPHBhdGggZD0iTTUzLjY2NTA5MDksMjIuMTEyOTQ1NSBDNTAuNjg0NTA5MSwyMy42NjY0IDM1LjI0Mzc4MTgsMzAuMDE1MDU0NSAzMS45NTY0MzY0LDMxLjcyOTMwOTEgQzI4LjY2OTMwOTEsMzMuNDQyOTA5MSAyNi44NDMxMjczLDMzLjQyNjEwOTEgMjQuMjQ2MzI3MywzMi4xODQ2NTQ1IEMyMS42NDkzMDkxLDMwLjk0NDA3MjcgNS4yMTc4MTgxOCwyNC4zMDU2NzI3IDIuMjU3OTYzNjQsMjIuODkxNDE4MiBDLTAuNzAxODkwOTA5LDIxLjQ3Njk0NTUgLTAuNzYzODU0NTQ1LDIwLjUwMjk4MTggMi4xNDM2MzYzNiwxOS4zNjQwNzI3IEM1LjA1MTEyNzI3LDE4LjIyNTgxODIgMjEuMzkyNzI3MywxMS44MTQxMDkxIDI0Ljg0NjU0NTUsMTAuNTc1MjcyNyBDMjguMjk5OTI3Myw5LjMzNjQzNjM2IDI5LjQ5Nzk2MzYsOS4yOTE0OTA5MSAzMi40MzY4NzI3LDEwLjM2ODIxODIgQzM1LjM3NiwxMS40NDQ3MjczIDUwLjcyNDY1NDUsMTcuNTUzNiA1My42Mjg4NzI3LDE4LjYxNzY3MjcgQzU2LjUzNDE4MTgsMTkuNjgyNCA1Ni42NDU2NzI3LDIwLjU1OTQ5MDkgNTMuNjY1MDkwOSwyMi4xMTI5NDU1IiBpZD0iU2hhcGUiIGZpbGw9IiNDNjMwMkIiPjwvcGF0aD4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgPHBhdGggZD0iTTUzLjY2NjE4MTgsMTguMjUxNTYzNiBDNTAuNjg1MzgxOCwxOS44MDUwMTgyIDM1LjI0NDIxODIsMjYuMTU0MTA5MSAzMS45NTY4NzI3LDI3Ljg2ODU4MTggQzI4LjY2OTUyNzMsMjkuNTgyMTgxOCAyNi44NDMzNDU1LDI5LjU2NTM4MTggMjQuMjQ2MzI3MywyOC4zMjM5MjczIEMyMS42NDkzMDkxLDI3LjA4MzEyNzMgNS4yMTczODE4MiwyMC40NDQ3MjczIDIuMjU3MzA5MDksMTkuMDMwNDcyNyBDMC43NzgwMzYzNjQsMTguMzIyOTA5MSAwLDE3LjcyNjYxODIgMCwxNy4xNjMyNzI3IEwwLDExLjUxNjcyNzMgQzAsMTEuNTE2NzI3MyAyMS4zOTI3MjczLDYuODYwMDcyNzMgMjQuODQ2MzI3Myw1LjYyMTIzNjM2IEMyOC4yOTk3MDkxLDQuMzgxOTYzNjQgMjkuNDk3OTYzNiw0LjMzNzQ1NDU1IDMyLjQzNjg3MjcsNS40MTM5NjM2NCBDMzUuMzc2NDM2NCw2LjQ5MDY5MDkxIDUyLjk1MDEwOTEsOS42NjA2NTQ1NSA1NS44NTQ1NDU1LDEwLjcyNDcyNzMgTDU1Ljg1MzIzNjQsMTYuMjkwOTgxOCBDNTUuODUzNjcyNywxNi44NDg0MzY0IDU1LjE4MzQxODIsMTcuNDYwNjU0NSA1My42NjYxODE4LDE4LjI1MTU2MzYiIGlkPSJTaGFwZSIgZmlsbD0iIzkxMjYyNiI+PC9wYXRoPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA8cGF0aCBkPSJNNTMuNjY1MDkwOSwxMi42MzkyNzI3IEM1MC42ODQ1MDkxLDE0LjE5MjcyNzMgMzUuMjQzNzgxOCwyMC41NDE4MTgyIDMxLjk1NjQzNjQsMjIuMjU1NDE4MiBDMjguNjY5MzA5MSwyMy45NjkwMTgyIDI2Ljg0MzEyNzMsMjMuOTUyMjE4MiAyNC4yNDYzMjczLDIyLjcxMTQxODIgQzIxLjY0OTUyNzMsMjEuNDY5OTYzNiA1LjIxNzgxODE4LDE0LjgzMiAyLjI1ODE4MTgyLDEzLjQxNzUyNzMgQy0wLjcwMTg5MDkwOSwxMi4wMDMyNzI3IC0wLjc2MzYzNjM2NCwxMS4wMjkwOTA5IDIuMTQzNjM2MzYsOS44OTA0IEM1LjA1MTEyNzI3LDguNzUxOTI3MjcgMjEuMzkyNzI3MywyLjM0MTA5MDkxIDI0Ljg0NjU0NTUsMS4xMDE4MTgxOCBDMjguMjk5OTI3MywtMC4xMzcyMzYzNjQgMjkuNDk3OTYzNiwtMC4xODE3NDU0NTUgMzIuNDM2ODcyNywwLjg5NDk4MTgxOCBDMzUuMzc2LDEuOTcxNzA5MDkgNTAuNzI0NjU0NSw4LjA4MDU4MTgyIDUzLjYyODg3MjcsOS4xNDQ2NTQ1NSBDNTYuNTM0MTgxOCwxMC4yMDg1MDkxIDU2LjY0NTY3MjcsMTEuMDg1ODE4MiA1My42NjUwOTA5LDEyLjYzOTI3MjciIGlkPSJTaGFwZSIgZmlsbD0iI0M2MzAyQiI+PC9wYXRoPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA8cGF0aCBkPSJNMzQuNzUyNjU0NSw3LjE0Njk4MTgyIEwyOS45NTA0NzI3LDcuNjQ1NTI3MjcgTDI4Ljg3NTQ5MDksMTAuMjMyMjkwOSBMMjcuMTM5Miw3LjM0NTc0NTQ1IEwyMS41OTQxMDkxLDYuODQ3NDE4MTggTDI1LjczMTcwOTEsNS4zNTUyNzI3MyBMMjQuNDkwMjU0NSwzLjA2NDggTDI4LjM2NDA3MjcsNC41Nzk4NTQ1NSBMMzIuMDE2LDMuMzg0MjE4MTggTDMxLjAyODk0NTUsNS43NTI1ODE4MiBMMzQuNzUyNjU0NSw3LjE0Njk4MTgyIE0yOC41ODg4LDE5LjY5NjM2MzYgTDE5LjYyNjU0NTUsMTUuOTc5MiBMMzIuNDY4NzI3MywxNC4wMDc5MjczIEwyOC41ODg4LDE5LjY5NjM2MzYgTTE2LjE2MzM0NTUsOC41ODQ4IEMxOS45NTQyNTQ1LDguNTg0OCAyMy4wMjczNDU1LDkuNzc2MDcyNzMgMjMuMDI3MzQ1NSwxMS4yNDUzMDkxIEMyMy4wMjczNDU1LDEyLjcxNDk4MTggMTkuOTU0MjU0NSwxMy45MDYwMzY0IDE2LjE2MzM0NTUsMTMuOTA2MDM2NCBDMTIuMzcyNDM2NCwxMy45MDYwMzY0IDkuMjk5MzQ1NDUsMTIuNzE0NzYzNiA5LjI5OTM0NTQ1LDExLjI0NTMwOTEgQzkuMjk5MzQ1NDUsOS43NzYwNzI3MyAxMi4zNzI0MzY0LDguNTg0OCAxNi4xNjMzNDU1LDguNTg0OCIgaWQ9IlNoYXBlIiBmaWxsPSIjRkZGRkZGIj48L3BhdGg+CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDxwb2x5bGluZSBpZD0iU2hhcGUiIGZpbGw9IiM2MjFCMUMiIHBvaW50cz0iNDAuNDI4IDcuODU0MTA5MDkgNDguMDI4NTgxOCAxMC44NTc2IDQwLjQzNDU0NTUgMTMuODU4MjU0NSA0MC40MjggNy44NTM4OTA5MSI+PC9wb2x5bGluZT4KICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgPHBvbHlsaW5lIGlkPSJTaGFwZSIgZmlsbD0iIzlBMjkyOCIgcG9pbnRzPSIzMi4wMTkyNzI3IDExLjE4MDI5MDkgNDAuNDI4IDcuODU0MTA5MDkgNDAuNDM0NTQ1NSAxMy44NTgyNTQ1IDM5LjYxMDAzNjQgMTQuMTgwNzI3MyAzMi4wMTkyNzI3IDExLjE4MDI5MDkiPjwvcG9seWxpbmU+CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgPC9nPgogICAgICAgICAgICAgICAgICAgICAgICAgICAgPC9nPgogICAgICAgICAgICAgICAgICAgICAgICA8L2c+CiAgICAgICAgICAgICAgICAgICAgPC9nPgogICAgICAgICAgICAgICAgPC9nPgogICAgICAgICAgICA8L2c+CiAgICAgICAgPC9nPgogICAgPC9nPgo8L3N2Zz4=
+      mediatype: image/svg+xml
+  customresourcedefinitions:
+    owned:
+      - name: redisfailovers.databases.spotahome.com
+        displayName: RedisFailover
+        description: "Create a Redis sentinel instance"
+        kind: RedisFailover
+        version: v1
+        specDescriptors:
+          - path: auth.secretPath
+            displayName: Secret Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:description:en:Input the secret name which includes the `password` key. If not exists, it will be generated with a random password'
+              - 'urn:alm:descriptor:description:zh:填写已有 Secret 名称，需包含`password`字段。如此 Secret 不存在，则会创建并生成随机密码。'
+          - path: redis.image
+            displayName: Redis Image
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Image'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:__REDIS_VERSION_6_IMAGE__'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:__REDIS_VERSION_6_2_IMAGE__'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:__REDIS_VERSION_7_IMAGE__'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:__REDIS_VERSION_7_2_IMAGE__'
+              - 'urn:alm:descriptor:com.tectonic.default:__DEFAULT_REDIS_IMAGE__'
+              - 'urn:alm:descriptor:description:en:Redis image'
+              - 'urn:alm:descriptor:description:zh:Redis 实例镜像'
+          - path: sentinel.image
+            displayName: Sentinel Image
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Image'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:__REDIS_VERSION_6_IMAGE__'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:__REDIS_VERSION_6_2_IMAGE__'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:__REDIS_VERSION_7_IMAGE__'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:__REDIS_VERSION_7_2_IMAGE__'
+              - 'urn:alm:descriptor:com.tectonic.default:__DEFAULT_REDIS_IMAGE__'
+              - 'urn:alm:descriptor:description:en:Sentinel image'
+              - 'urn:alm:descriptor:description:zh:Sentinel 实例镜像(请与Redis镜像版本保持一致)'
+          - path: redis.imagePullPolicy
+            displayName: Redis Image Pull Policy
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Image'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:Always'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:Never'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:IfNotPresent'
+              - 'urn:alm:descriptor:com.tectonic.default:IfNotPresent'
+              - 'urn:alm:descriptor:description:en:Redis image pull policy'
+              - 'urn:alm:descriptor:description:zh:Redis 镜像拉取策略'
+          - path: sentinel.imagePullPolicy
+            displayName: Sentinel Image Pull Policy
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Image'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:Always'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:Never'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:IfNotPresent'
+              - 'urn:alm:descriptor:com.tectonic.default:IfNotPresent'
+              - 'urn:alm:descriptor:description:en:Image pull policy'
+              - 'urn:alm:descriptor:description:zh:Sentinel 镜像拉取策略'
+          - path: redis.replicas
+            displayName: Redis Replicas
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:number'
+              - 'urn:alm:descriptor:com.tectonic.default:2'
+              - 'urn:alm:descriptor:description:en:Redis replicas'
+              - 'urn:alm:descriptor:description:zh:Redis 副本数'
+          - path: sentinel.replicas
+            displayName: Sentinel Replicas
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:number'
+              - 'urn:alm:descriptor:com.tectonic.default:3'
+              - 'urn:alm:descriptor:description:en:Sentinel replicas'
+              - 'urn:alm:descriptor:description:zh:Sentinel 副本数'
+          - path: enableTLS
+            displayName: Enable TLS
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:booleanSwitch'
+              - 'urn:alm:descriptor:description:en:Enable TLS for redis >=6.0, client will need cert to connect'
+              - 'urn:alm:descriptor:description:zh:仅在 Redis >=6.0 版本可用，开启后，客户端连接 Redis 将需要使用证书。'
+          - path: redis.resources
+            displayName: Resource
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
+          - path: redis.configConfigMap
+            displayName: Redis Config ConfigMap
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:com.tectonic.ui:advanced'
+              - 'urn:alm:descriptor:description:en:Redis config ConfigMap'
+              - 'urn:alm:descriptor:description:zh:Redis 配置文件所在配置字典名称，必须和实例在相同的命名空间，配置文件的 key 为 redis.conf，内容为配置文件的内容，支持注释。如果未填写，则会自动创建配置字典。'
+          - path: redis.storage.keepAfterDeletion
+            displayName: Keep After Deletion
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:booleanSwitch'
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Storage'
+              - 'urn:alm:descriptor:description:en:Keep after deletion'
+              - 'urn:alm:descriptor:description:zh:删除实例后保留持久化卷'
+          - path: redis.storage.persistentVolumeClaim.metadata.name
+            displayName: PersistentVolumeClaim Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Storage'
+              - 'urn:alm:descriptor:label:en:Name'
+              - 'urn:alm:descriptor:label:zh:持久卷声明名称'
+              - 'urn:alm:descriptor:description:en:PersistentVolumeClaim Name'
+              - 'urn:alm:descriptor:description:zh:用于生成持久卷声明的名称，具有标识性即可。'
+          - path: redis.storage.persistentVolumeClaim.spec.storageClassName
+            displayName: StorageClass Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Storage'
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:label:en:StorageClass Name'
+              - 'urn:alm:descriptor:label:zh:存储类名称'
+          - path: redis.storage.persistentVolumeClaim.spec.resources.requests.storage
+            displayName: Storage Size
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Storage'
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:label:en:Storage Size'
+              - 'urn:alm:descriptor:label:zh:存储大小'
+              - 'urn:alm:descriptor:description:en:Storage Size'
+              - 'urn:alm:descriptor:description:zh:需要带单位，如 10Gi。'
+          - path: redis.exporter.enabled
+            displayName: Enable Exporter
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:booleanSwitch'
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Exporter'
+              - 'urn:alm:descriptor:com.tectonic.default:false'
+              - 'urn:alm:descriptor:description:en:Enable exporter'
+              - 'urn:alm:descriptor:description:zh:开启实例监控'
+          - path: redis.exporter.image
+            displayName: Exporter Image
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Exporter'
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldDependency:redis.exporter.enabled:true'
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:com.tectonic.default:__DEFAULT_EXPORTER_IMAGE__'
+              - 'urn:alm:descriptor:description:en:Exporter image'
+              - 'urn:alm:descriptor:description:zh:Redis 监控镜像'
+          - path: redis.exporter.imagePullPolicy
+            displayName: Redis Exporter Image Pull Policy
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Exporter'
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldDependency:redis.exporter.enabled:true'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:Always'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:Never'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:IfNotPresent'
+              - 'urn:alm:descriptor:com.tectonic.default:IfNotPresent'
+              - 'urn:alm:descriptor:description:en:Redis exporter image pull policy'
+              - 'urn:alm:descriptor:description:zh:Redis 监控镜像拉取策略'
+          - path: redis.backup.schedule[0].name
+            displayName: Schedule Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Backup'
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:description:en:Schedule name'
+              - 'urn:alm:descriptor:description:zh:定时备份名称'
+          - path: redis.backup.schedule[0].schedule
+            displayName: Schedule Policy
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Backup'
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:description:en:Schedule Policy, example: 0 0 * * *'
+              - 'urn:alm:descriptor:description:zh:备份时间策略，如: 0 0 * * *'
+          - path: redis.backup.schedule[0].keep
+            displayName: Keep Backup Last Number
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Backup'
+              - 'urn:alm:descriptor:com.tectonic.ui:number'
+              - 'urn:alm:descriptor:description:en:Keep backup last number'
+              - 'urn:alm:descriptor:description:zh:保留最近备份个数'
+          - path: redis.backup.schedule[0].keepAfterDeletion
+            displayName: Keep After Deletion
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Backup'
+              - 'urn:alm:descriptor:com.tectonic.ui:booleanSwitch'
+              - 'urn:alm:descriptor:description:en:Keep after deletion'
+              - 'urn:alm:descriptor:description:zh:删除实例后是否保留存储卷'
+          - path: redis.backup.schedule[0].storage.storageClassName
+            displayName: StorageClass Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Backup'
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:description:en:StorageClass name'
+              - 'urn:alm:descriptor:description:zh:存储类名称'
+          - path: redis.backup.schedule[0].storage.size
+            displayName: Storage Size
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Backup'
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:description:en:Storage size, example: 10Gi'
+              - 'urn:alm:descriptor:description:zh:存储大小，如：10Gi'
+          - path: redis.restore.backupName
+            displayName: Backup Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Restore'
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:description:en:Backup name'
+              - 'urn:alm:descriptor:description:zh:Redis 备份名称，将从该备份中恢复数据。'
+      - name: redisbackups.redis.middleware.alauda.io
+        displayName: RedisBackup
+        description: "Configure sentinel backups"
+        kind: RedisBackup
+        version: v1
+        specDescriptors:
+          - path: source.redisFailoverName
+            displayName: Instance Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:label:en:Instance Name'
+              - 'urn:alm:descriptor:label:zh:实例名称'
+              - 'urn:alm:descriptor:description:en:Instance Name'
+              - 'urn:alm:descriptor:description:zh:需要备份的 Redis 实例名称。'
+          - path: storage
+            displayName: Storage Size
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:label:en:Storage Size'
+              - 'urn:alm:descriptor:label:zh:存储容量'
+              - 'urn:alm:descriptor:description:en:Storage Size'
+              - 'urn:alm:descriptor:description:zh: 备份存储大小，使用 Kubernetes 存储格式，如 10Gi'
+          - path: source.storageClassName
+            displayName: StorageClass Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:label:en:StorageClass Name'
+              - 'urn:alm:descriptor:label:zh:存储类名称'
+              - 'urn:alm:descriptor:description:en:StorageClass Name'
+              - 'urn:alm:descriptor:description:zh:备份所使用的存储类名称，只支持网络存储（如ceph-fs、NFS），不支持块存储（如local-path、topolvm、ceph-rbd）。'
+          - path: image
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:hidden'
+      - name: redisclusterbackups.redis.middleware.alauda.io
+        displayName: RedisBackup
+        description: "Configure cluster backups"
+        kind: RedisClusterBackup
+        version: v1
+        specDescriptors:
+          - path: source.redisClusterName
+            displayName: Instance Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:label:en:Instance Name'
+              - 'urn:alm:descriptor:label:zh:实例名称'
+              - 'urn:alm:descriptor:description:en:Instance Name'
+              - 'urn:alm:descriptor:description:zh:需要备份的 Redis 实例名称。'
+          - path: storage
+            displayName: Storage Size
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:label:en:Storage Size'
+              - 'urn:alm:descriptor:label:zh:存储容量'
+              - 'urn:alm:descriptor:description:en:Storage Size'
+              - 'urn:alm:descriptor:description:zh: 备份存储大小，使用 Kubernetes 存储格式，如 10Gi'
+          - path: source.storageClassName
+            displayName: StorageClass Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:label:en:StorageClass Name'
+              - 'urn:alm:descriptor:label:zh:存储类名称'
+              - 'urn:alm:descriptor:description:en:StorageClass Name'
+              - 'urn:alm:descriptor:description:zh:备份所使用的存储类名称，只支持网络存储（如ceph-fs、NFS），不支持块存储（如local-path、topolvm、ceph-rbd）。'
+          - path: image
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:hidden'
+      - name: distributedredisclusters.redis.kun
+        displayName: DistributedRedisCluster
+        description: "Create a Redis cluster instance"
+        kind: DistributedRedisCluster
+        version: v1alpha1
+        specDescriptors:
+          - path: image
+            displayName: Image
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:select:__REDIS_VERSION_6_IMAGE__'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:__REDIS_VERSION_6_2_IMAGE__'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:__REDIS_VERSION_7_IMAGE__'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:__REDIS_VERSION_7_2_IMAGE__'
+              - 'urn:alm:descriptor:com.tectonic.default:__DEFAULT_REDIS_IMAGE__'
+              - 'urn:alm:descriptor:label:en:Image'
+              - 'urn:alm:descriptor:label:zh:实例镜像'
+              - 'urn:alm:descriptor:description:en:Image'
+              - 'urn:alm:descriptor:description:zh:实例镜像'
+          - path: imagePullPolicy
+            displayName: Image Pull Policy
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:select:Always'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:Never'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:IfNotPresent'
+              - 'urn:alm:descriptor:com.tectonic.default:IfNotPresent'
+              - 'urn:alm:descriptor:label:en:Image pull policy'
+              - 'urn:alm:descriptor:label:zh:镜像拉取策略'
+              - 'urn:alm:descriptor:description:en:Image pull policy'
+              - 'urn:alm:descriptor:description:zh:镜像拉取策略'
+          - path: masterSize
+            displayName: Master Size
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:number'
+              - 'urn:alm:descriptor:com.tectonic.default:3'
+              - 'urn:alm:descriptor:label:en:Master Size'
+              - 'urn:alm:descriptor:label:zh:分片数'
+              - 'urn:alm:descriptor:description:en:Master size'
+              - 'urn:alm:descriptor:description:zh:Redis 集群主节点数目。'
+          - path: clusterReplicas
+            displayName: Cluster Replicas
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:number'
+              - 'urn:alm:descriptor:com.tectonic.default:1'
+              - 'urn:alm:descriptor:label:en:Replicas per master'
+              - 'urn:alm:descriptor:label:zh:每分片从节点数'
+              - 'urn:alm:descriptor:description:en:Cluster replicas'
+              - 'urn:alm:descriptor:description:zh:Redis 集群每个主节点包含从节点个数。'
+          - path: resources
+            displayName: Resource
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
+              - 'urn:alm:descriptor:label:en:Resource'
+              - 'urn:alm:descriptor:label:zh:资源配额'
+          - path: enableTLS
+            displayName: Enable TLS
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:booleanSwitch'
+              - 'urn:alm:descriptor:label:en:Enable TLS'
+              - 'urn:alm:descriptor:label:zh:开启 TLS 加密'
+              - 'urn:alm:descriptor:description:en:Enable TLS for redis >=6.0, client will need cert to connect'
+              - 'urn:alm:descriptor:description:zh:仅在 Redis >=6.0 版本可用，开启后，客户端连接 Redis 将需要使用证书。'
+          - path: requiredAntiAffinity
+            displayName: Required Anti Affinity
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:booleanSwitch'
+              - 'urn:alm:descriptor:label:en:Anti Affinity'
+              - 'urn:alm:descriptor:label:zh:开启反亲和'
+              - 'urn:alm:descriptor:description:en:Required anti affinity'
+              - 'urn:alm:descriptor:description:zh:强制 master 和 slave 部署在不同节点。'
+          - path: storage.deleteClaim
+            displayName: Delete Claim
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:storage'
+              - 'urn:alm:descriptor:com.tectonic.ui:booleanSwitch'
+              - 'urn:alm:descriptor:label:en:Delete Claim'
+              - 'urn:alm:descriptor:label:zh:是否删除持久卷'
+              - 'urn:alm:descriptor:description:en:Delete Claim'
+              - 'urn:alm:descriptor:description:zh:删除实例时是否删除持久卷。'
+          - path: storage.class
+            displayName: StorageClass Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:storage'
+              - 'urn:alm:descriptor:label:en:StorageClass Name'
+              - 'urn:alm:descriptor:label:zh:存储类名称'
+          - path: storage.size
+            displayName: Size
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:storage'
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:label:en:Size'
+              - 'urn:alm:descriptor:label:zh:存储容量'
+              - 'urn:alm:descriptor:description:en:Storage Size'
+              - 'urn:alm:descriptor:description:zh:声明持久化存储容量，需要带单位，如 10Gi。'
+          - path: storage.type
+            displayName: Storage Type
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:storage'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:persistent-claim'
+              - 'urn:alm:descriptor:com.tectonic.ui:select:ephemeral'
+              - 'urn:alm:descriptor:com.tectonic.default:persistent-claim'
+              - 'urn:alm:descriptor:label:en:Storage Type'
+              - 'urn:alm:descriptor:label:zh:存储类型'
+              - 'urn:alm:descriptor:description:en:Storage Type'
+              - 'urn:alm:descriptor:description:zh:存储类型，persistent-claim（持久卷类型）和 ephemeral（临时存储）。'
+          - path: passwordSecret.name
+            displayName: Secret Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:label:en:Secret Name'
+              - 'urn:alm:descriptor:label:zh:Secret名称'
+              - 'urn:alm:descriptor:description:en:Input the secret name which includes the `password` key. If not exists, it will be generated with a random password'
+              - 'urn:alm:descriptor:description:zh:填写已有 Secret 名称，需包含`password`字段。如此 Secret 不存在，则会创建并生成随机密码。'
+          - path: backup.schedule[0].name
+            displayName: Schedule Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Backup'
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:label:en:Schedule Name'
+              - 'urn:alm:descriptor:label:zh:定时备份名称'
+              - 'urn:alm:descriptor:description:en:Schedule name'
+              - 'urn:alm:descriptor:description:zh:定时备份名称，用于标识定时备份，名称需唯一。'
+          - path: backup.schedule[0].schedule
+            displayName: Schedule Policy
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Backup'
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:label:en:Schedule Policy'
+              - 'urn:alm:descriptor:label:zh:定时策略'
+              - 'urn:alm:descriptor:description:en:Schedule Policy, example: 0 0 * * *'
+              - 'urn:alm:descriptor:description:zh:备份时间策略，如: 0 0 * * *'
+          - path: backup.schedule[0].keep
+            displayName: Keep Backup Last Number
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Backup'
+              - 'urn:alm:descriptor:com.tectonic.ui:number'
+              - 'urn:alm:descriptor:label:en:Keep Backup Last Number'
+              - 'urn:alm:descriptor:label:zh:保留个数'
+              - 'urn:alm:descriptor:description:en:Keep backup last number'
+              - 'urn:alm:descriptor:description:zh:保留最近备份个数'
+          - path: backup.schedule[0].keepAfterDeletion
+            displayName: Keep After Deletion
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Backup'
+              - 'urn:alm:descriptor:com.tectonic.ui:booleanSwitch'
+              - 'urn:alm:descriptor:label:en:Keep After Deletion'
+              - 'urn:alm:descriptor:label:zh:保留持久卷'
+              - 'urn:alm:descriptor:com.tectonic.default:true'
+              - 'urn:alm:descriptor:description:en:Keep after deletion'
+              - 'urn:alm:descriptor:description:zh:删除实例后是否保留存储卷'
+          - path: backup.schedule[0].storage.storageClassName
+            displayName: StorageClass Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Backup'
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:label:en:StorageClass Name'
+              - 'urn:alm:descriptor:label:zh:存储类名称'
+              - 'urn:alm:descriptor:description:en:StorageClass name'
+              - 'urn:alm:descriptor:description:zh:存储类名称'
+          - path: backup.schedule[0].storage.size
+            displayName: Storage Size
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Backup'
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:label:en:Storage Size'
+              - 'urn:alm:descriptor:label:zh:存储容量'
+              - 'urn:alm:descriptor:description:en:Storage size, example: 10Gi'
+              - 'urn:alm:descriptor:description:zh:存储大小，如：10Gi'
+          - path: restore.backupName
+            displayName: Backup Name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Restore'
+              - 'urn:alm:descriptor:com.tectonic.ui:text'
+              - 'urn:alm:descriptor:label:en:Backup Name'
+              - 'urn:alm:descriptor:label:zh:备份名称'
+              - 'urn:alm:descriptor:description:en:RedisClusterBackup name'
+              - 'urn:alm:descriptor:description:zh:Redis 备份名称，将从该备份中恢复数据。'
+          - path: restore.imagePullPolicy
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:hidden'
+          - path: restore.image
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:hidden'
+          - path: serviceName
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:hidden'
+          - path: imagePullSecrets[0].name
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:hidden'
+          - path: toleRations[0].operator
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:hidden'
+          - path: toleRations[0].key
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:hidden'
+          - path: toleRations[0].value
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:hidden'
+          - path: toleRations[0].effect
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:hidden'
+          - path: toleRations[0].tolerationSeconds
+            x-descriptors:
+              - 'urn:alm:descriptor:com.tectonic.ui:hidden'
+  install:
+    strategy: deployment
+    spec:
+      deployments: null
+  webhookdefinitions:
+    - admissionReviewVersions:
+        - v1
+      type: ValidatingAdmissionWebhook
+      containerPort: 443
+      targetPort: 9443
+      deploymentName: redis-operator
+      failurePolicy: Fail
+      generateName: vredis.kb.io
+      rules:
+      - apiGroups:
+        - middleware.alauda.io
+        apiVersions:
+        - v1
+        operations:
+        - CREATE
+        - UPDATE
+        - DELETE
+      resources:  
+        - redis
+      sideEffects: None
+      webhookPath: /validate-middleware-alauda-io-v1-redis
+  installModes:
+    - type: OwnNamespace
+      supported: true
+    - type: SingleNamespace
+      supported: true
+    - type: MultiNamespace
+      supported: false
+    - type: AllNamespaces
+      supported: true

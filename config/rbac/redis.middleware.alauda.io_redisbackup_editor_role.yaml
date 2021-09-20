@@ -1,0 +1,24 @@
+# permissions for end users to edit redisbackups.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: redisbackup-editor-role
+rules:
+- apiGroups:
+  - redis.middleware.alauda.io
+  resources:
+  - redisbackups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - redis.middleware.alauda.io
+  resources:
+  - redisbackups/status
+  verbs:
+  - get

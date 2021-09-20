@@ -1,0 +1,16 @@
+resources:
+- manager.yaml
+images:
+- name: redis-operator
+  newName: ghcr.io/alauda/redis-operator
+  newTag: v1.0.0
+commonAnnotations:
+  operatorVersion: v3.15.0-beta.20.g274dbf5f
+  redisDefaultImage: redis:6.0-alpine
+  redisExporterImage: oliver006/redis_exporter:v1.55.0
+  redisVersion72Image: redis:7.2-alpine
+  redisVersion7Image: redis:6.0-alpine
+  redisVersion62Image: redis:6.0-alpine
+  redisVersion6Image: redis:6.0-alpine
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization

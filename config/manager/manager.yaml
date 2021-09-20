@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: redis-operator
+    control-plane: controller-manager
+  name: redis-operator
+  namespace: system
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: redis-operator
+  template:
+    metadata:
+      labels:
+        name: redis-operator
+    spec:
+      serviceAccountName: redis-operator
+      containers:
+        - name: redis-operator
+          image: redis-operator
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            failureThreshold: 60
+            periodSeconds: 5
+          livenessProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /healthz
+              port: 8081
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 30
+          readinessProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /readyz
+              port: 8081
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 30
+          imagePullPolicy: IfNotPresent
+          args: ["-leader-elect"]
+          resources:
+            limits:
+              cpu: 400m
+              memory: 500Mi
+            requests:
+              cpu: 400m
+              memory: 500Mi
+          env:
+            - name: DEFAULT_REDIS_IMAGE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['redisDefaultImage']
+            - name: REDIS_VERSION_6_IMAGE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['redisVersion6Image']
+            - name: REDIS_VERSION_6_2_IMAGE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['redisVersion62Image']
+            - name: REDIS_VERSION_7_IMAGE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['redisVersion7Image']
+            - name: REDIS_VERSION_7_2_IMAGE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['redisVersion72Image']
+            - name: DEFAULT_EXPORTER_IMAGE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['redisExporterImage']
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['olm.targetNamespaces']
+            - name: REDIS_TOOLS_IMAGE
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.containers[0].image
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            - name: REDIS_OPERATOR_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['operatorVersion']

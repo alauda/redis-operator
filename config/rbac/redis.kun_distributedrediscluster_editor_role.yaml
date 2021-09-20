@@ -1,0 +1,24 @@
+# permissions for end users to edit distributedredisclusters.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: distributedrediscluster-editor-role
+rules:
+- apiGroups:
+  - redis.kun
+  resources:
+  - distributedredisclusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - redis.kun
+  resources:
+  - distributedredisclusters/status
+  verbs:
+  - get

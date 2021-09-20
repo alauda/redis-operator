@@ -1,0 +1,20 @@
+# permissions for end users to view distributedredisclusters.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: distributedrediscluster-viewer-role
+rules:
+- apiGroups:
+  - redis.kun
+  resources:
+  - distributedredisclusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - redis.kun
+  resources:
+  - distributedredisclusters/status
+  verbs:
+  - get

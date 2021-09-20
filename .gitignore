@@ -13,3 +13,21 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+bin/*
+bin/
+.vscode/
+.vscode/*
+.DS_Store/*
+.DS_Store/
+*/.DS_Store/*
+*/.DS_Store
+
+.idea/
+.idea/*
+.vscode/*
+
+.DS_Store
+.vscode/*
+coverage.txt
+bundle/*
+bundle.Dockerfile

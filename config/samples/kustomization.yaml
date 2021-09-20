@@ -1,0 +1,7 @@
+resources:
+  - databases.spotahome.com_v1_redisfailover.yaml
+  - redis.kun_v1alpha1_distributedrediscluster.yaml
+  - redis.middleware.alauda.io_v1_redisbackup.yaml
+  - redis.middleware.alauda.io_v1_redisclusterbackup.yaml
+  - redis.middleware.alauda.io_v1_redisuser.yaml
+
