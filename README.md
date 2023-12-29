@@ -1,6 +1,6 @@
 # RedisOperator
 
-**RedisOperator** is a product ready kubernetes operator to deploy and manage high available [Redis Sentinel] and [Redis Cluster] instances. This repository contains multi [Custom Resource Definition (CRD)] designed for the lifecycle of Redis sentinel or cluster instance.
+**RedisOperator** is a production-ready kubernetes operator to deploy and manage high available [Redis Sentinel](https://redis.io/docs/management/sentinel/) and [Redis Cluster](https://redis.io/docs/reference/cluster-spec/) instances. This repository contains multi [Custom Resource Definition (CRD)](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions) designed for the lifecycle of Redis sentinel or cluster instance.
 
 ## Features
 
@@ -9,11 +9,13 @@
 * Redis 6.0, 6.2, 7.0, 7.2 supported (only versions 6.0 and 7.2 have undergone thorough testing. 5.0 also supported, but no acl supported)
 * Online data backup/restore
 * Graceful version upgrade
-* High available in product environment
+* High available in production environment
 
 ## Quickstart
 
 If you have a Kubernetes cluster and `kubectl` configured to access it, run the following command to instance the operator:
+
+TODO
 
 ## Documentation
 
@@ -29,9 +31,7 @@ In addition, few [samples](./config/samples) can be find in this repo.
 
 ## Contributing
 
-This project follows the typical GitHub pull request model. Before starting any work, please either comment on an [existing issue](https://github.com/alauda/redis-operatoa, ,), or file a new one.
-
-Please read [contribution guidelines](CONTRIBUTING.md) if you are interested in contributing to this project.
+This project follows the typical GitHub pull request model. Before starting any work, please either comment on an [existing issue](https://github.com/alauda/redis-operator/issues), or file a new one.
 
 ## Releasing
 
