@@ -7,8 +7,12 @@
 * Redis sentinel/cluster supported
 * ACL supported
 * Redis 6.0, 6.2, 7.0, 7.2 supported (only versions 6.0 and 7.2 have undergone thorough testing. 5.0 also supported, but no acl supported)
+* Nodeport access supported, assigne ports also supported 
+* IPv4/IpV6 supported
+* Online scale up/down
 * Online data backup/restore
 * Graceful version upgrade
+* Nodeselector, toleration and affinity supported
 * High available in production environment
 
 ## Quickstart
