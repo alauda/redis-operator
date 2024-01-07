@@ -135,8 +135,8 @@ func TestSlot(t *testing.T) {
 	if !fullSlots.IsFullfilled() {
 		t.Errorf("specified shard slots not fullfilled all slots")
 	}
-	if total > 16384 {
-		t.Errorf("specified shard slots duplicated")
+	if total == 16384 {
+		t.Errorf("shard slots must duplicated")
 	}
 }
 
