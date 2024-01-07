@@ -1,4 +1,4 @@
-# RedisOperator
+# RedisOperator [![Coverage Status](https://coveralls.io/repos/github/alauda/redis-operator/badge.svg?branch=main)](https://coveralls.io/github/alauda/redis-operator?branch=main)
 
 **RedisOperator** is a production-ready kubernetes operator to deploy and manage high available [Redis Sentinel](https://redis.io/docs/management/sentinel/) and [Redis Cluster](https://redis.io/docs/reference/cluster-spec/) instances. This repository contains multi [Custom Resource Definition (CRD)](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/#customresourcedefinitions) designed for the lifecycle of Redis sentinel or cluster instance.
 
