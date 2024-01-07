@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/cert-manager/cert-manager v1.9.1
-	github.com/fsnotify/fsnotify v1.6.0
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-logr/logr v1.2.4
 	github.com/gomodule/redigo v1.8.9
 	github.com/minio/minio-go/v7 v7.0.49
