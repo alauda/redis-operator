@@ -91,7 +91,7 @@ func (r *DistributedRedisClusterReconciler) Reconcile(ctx context.Context, req c
 
 	// TODO: to this in webhook
 	// here do some default value check and convert
-	instance.Init()
+	_ = instance.Init()
 
 	// ================ setup default end ===================
 

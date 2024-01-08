@@ -43,14 +43,14 @@ func Allocate(desired int, shards []*Slots) (ret []*Slots) {
 			if i < rest {
 				count = avg + 1
 			}
-			ret[i].Set(fmt.Sprintf("%d-%d", offset, offset+count-1), SlotAssigned)
+			_ = ret[i].Set(fmt.Sprintf("%d-%d", offset, offset+count-1), SlotAssigned)
 			offset += count
 		}
 	} else if len(shards) < desired {
 		var (
 			// move out
-			movingRet = make([]int, desired, desired)
-			movePlan  = make([]map[int]int, len(shards), len(shards))
+			movingRet = make([]int, desired)
+			movePlan  = make([]map[int]int, len(shards))
 			movables  []int
 		)
 		for i := 0; i < desired; i++ {
@@ -104,8 +104,8 @@ func Allocate(desired int, shards []*Slots) (ret []*Slots) {
 				toMoveSlots := slots[len(slots)-count:]
 				slots = slots[0 : len(slots)-count]
 				for _, slot := range toMoveSlots {
-					ret[target].Set(slot, SlotAssigned)
-					ret[i].Set(slot, SlotUnAssigned)
+					_ = ret[target].Set(slot, SlotAssigned)
+					_ = ret[i].Set(slot, SlotUnAssigned)
 				}
 			}
 		}
@@ -115,7 +115,7 @@ func Allocate(desired int, shards []*Slots) (ret []*Slots) {
 		// TODO: 与其引入复杂的槽缩容算法不如加一个槽 Rebalance 功能，用于在集群空闲时重新规划并迁移槽
 		var (
 			// move in
-			movingRet = make([]int, desired, desired)
+			movingRet = make([]int, desired)
 			movePlan  = map[int]map[int]int{}
 			movables  []int
 		)
@@ -172,8 +172,8 @@ func Allocate(desired int, shards []*Slots) (ret []*Slots) {
 				toMoveSlots := slots[0:count]
 				slots = slots[count:]
 				for _, slot := range toMoveSlots {
-					ret[target].Set(slot, SlotAssigned)
-					shards[i].Set(slot, SlotUnAssigned)
+					_ = ret[target].Set(slot, SlotAssigned)
+					_ = shards[i].Set(slot, SlotUnAssigned)
 				}
 			}
 		}

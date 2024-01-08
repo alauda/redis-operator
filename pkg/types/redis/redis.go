@@ -32,8 +32,8 @@ type RedisArch string
 
 const (
 	StandaloneArch RedisArch = "standalone"
-	SentinelArch             = "sentinel"
-	ClusterArch              = "cluster"
+	SentinelArch   RedisArch = "sentinel"
+	ClusterArch    RedisArch = "cluster"
 )
 
 type SentinelRole string

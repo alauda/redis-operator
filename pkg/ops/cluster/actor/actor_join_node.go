@@ -138,7 +138,6 @@ func (a *actorJoinNode) Do(ctx context.Context, val types.RedisInstance) *actor.
 						if err := master.Setup(ctx, args); err != nil {
 							return actor.NewResultWithError(cops.CommandAbort, fmt.Errorf("set up cluster meet failed"))
 						}
-						needRefresh = true
 					}
 				}
 				needRefresh = true
@@ -198,7 +197,7 @@ func (a *actorJoinNode) Do(ctx context.Context, val types.RedisInstance) *actor.
 	}
 
 	if needRefresh {
-		time.Sleep(1)
+		time.Sleep(time.Second)
 		// force refresh the cluster
 		if err := cluster.Refresh(ctx); err != nil {
 			logger.Error(err, "refresh cluster info failed")

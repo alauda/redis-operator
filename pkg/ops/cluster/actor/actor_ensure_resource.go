@@ -108,6 +108,7 @@ func (a *actorEnsureResource) Do(ctx context.Context, val types.RedisInstance) *
 	return nil
 }
 
+/*
 func (a *actorEnsureResource) ensureRedisUser(ctx context.Context, cluster types.RedisClusterInstance, logger logr.Logger) *actor.ActorResult {
 	cr := cluster.Definition()
 	if cluster.Users().GetOpUser() != nil {
@@ -127,6 +128,7 @@ func (a *actorEnsureResource) ensureRedisUser(ctx context.Context, cluster types
 
 	return nil
 }
+*/
 
 func (a *actorEnsureResource) pauseStatefulSet(ctx context.Context, cluster types.RedisClusterInstance, logger logr.Logger) *actor.ActorResult {
 	cr := cluster.Definition()
@@ -274,7 +276,7 @@ func (a *actorEnsureResource) ensureTLS(ctx context.Context, cluster types.Redis
 		}
 
 		// check when the certificate created
-		if time.Now().Sub(oldCert.GetCreationTimestamp().Time) > time.Minute*5 {
+		if time.Since(oldCert.GetCreationTimestamp().Time) > time.Minute*5 {
 			return actor.NewResultWithError(cops.CommandAbort, fmt.Errorf("issue for tls certificate failed, please check the cert-manager"))
 		}
 	}
@@ -464,18 +466,7 @@ func (a *actorEnsureResource) ensureRedisNodePortService(ctx context.Context, cl
 		}
 	}
 
-	services := []corev1.Service{}
 	labels := clusterbuilder.GetClusterLabels(cr.Name, nil)
-	if svcRes, err := a.client.GetServiceByLabels(ctx, cr.Namespace, labels); err != nil {
-		return actor.NewResultWithError(cops.CommandRequeue, err)
-	} else {
-		// ignore services without pod selector
-		for _, svc := range svcRes.Items {
-			if svc.Spec.Selector["statefulset.kubernetes.io/pod-name"] != "" {
-				services = append(services, svc)
-			}
-		}
-	}
 	clusterNodePortSvc, err := a.client.GetService(ctx, cr.GetNamespace(), clusterbuilder.RedisNodePortSvcName(cr.Name))
 	if err != nil && !errors.IsNotFound(err) {
 		a.logger.Error(err, "get cluster nodeport service failed", "target", clusterbuilder.RedisNodePortSvcName(cr.Name))
@@ -684,10 +675,6 @@ func (a *actorEnsureResource) ensureBackupSchedule(ctx context.Context, cluster 
 	}
 
 	// check backup schedule
-	var desiredCronJob []string
-	for _, b := range cr.Spec.Backup.Schedule {
-		desiredCronJob = append(desiredCronJob, clusterbuilder.GenerateCronJobName(cr.Name, b.Name))
-	}
 	// ref: https://jira.alauda.cn/browse/MIDDLEWARE-21009
 	deprecatedSelectorLabels := map[string]string{
 		"redis.kun/name": cr.Name,

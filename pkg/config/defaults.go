@@ -29,9 +29,9 @@ var (
 	ErrInvalidImage  = errors.New("invalid source image")
 )
 
-var (
-	minVerionOfRedisTLSSupported, _ = semver.NewVersion("6.0-AAA")
-)
+// var (
+// 	minVerionOfRedisTLSSupported, _ = semver.NewVersion("6.0-AAA")
+// )
 
 var redisVersionEnvs = []string{
 	"REDIS_VERSION_4_IMAGE",

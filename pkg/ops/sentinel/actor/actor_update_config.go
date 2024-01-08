@@ -64,7 +64,7 @@ func (a *actorUpdateConfigMap) Do(ctx context.Context, val types.RedisInstance) 
 	added, changed, deleted := oldConf.Diff(newConf)
 	if len(deleted) > 0 || len(added) > 0 || len(changed) > 0 {
 		// NOTE: update configmap first may cause the hot config fail for it will not retry again
-		if a.client.UpdateConfigMap(ctx, newCm.GetNamespace(), newCm); err != nil {
+		if err := a.client.UpdateConfigMap(ctx, newCm.GetNamespace(), newCm); err != nil {
 			a.logger.Error(err, "update config failed", "target", client.ObjectKeyFromObject(newCm))
 			return actor.NewResultWithError(sentinel.CommandRequeue, err)
 		}

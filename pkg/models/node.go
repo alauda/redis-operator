@@ -523,10 +523,7 @@ func (n *RedisNode) IsMasterFailed() bool {
 	if self.MasterId != "" {
 		for _, info := range n.nodes {
 			if info.Id == self.MasterId {
-				if strings.Contains(info.RawFlag, "fail") {
-					return true
-				}
-				return false
+				return strings.Contains(info.RawFlag, "fail")
 			}
 		}
 	}
@@ -554,7 +551,7 @@ func (n *RedisNode) IsContainerReady() bool {
 		if cond.Name == clusterbuilder.ServerContainerName || cond.Name == sentinelbuilder.SentinelContainerName {
 			// assume the main process is ready in 10s
 			if cond.Started != nil && *cond.Started && cond.State.Running != nil &&
-				time.Now().Sub(cond.State.Running.StartedAt.Time) > time.Second*10 {
+				time.Since(cond.State.Running.StartedAt.Time) > time.Second*10 {
 				return true
 			}
 		}

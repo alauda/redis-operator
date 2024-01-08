@@ -180,7 +180,7 @@ type ClusterServiceStatus string
 
 const (
 	ClusterInService    ClusterServiceStatus = "InService"
-	ClusterOutOfService                      = "OutOfService"
+	ClusterOutOfService ClusterServiceStatus = "OutOfService"
 )
 
 // ClusterShardsSlotStatus

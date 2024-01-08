@@ -40,6 +40,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type ContextKeyType string
+
+const (
+	ContextKeyDepth       ContextKeyType = "depth"
+	ContextKeyLastCommand ContextKeyType = "last_command"
+)
+
 type RuleEngine interface {
 	Inspect(ctx context.Context, instance types.RedisInstance) *actor.ActorResult
 }
@@ -266,9 +273,9 @@ __end__:
 			break __end__
 		}
 
-		ctx = context.WithValue(ctx, "depth", depth)
+		ctx = context.WithValue(ctx, ContextKeyDepth, depth)
 		if lastCommand != nil {
-			ctx = context.WithValue(ctx, "last_command", lastCommand.String())
+			ctx = context.WithValue(ctx, ContextKeyLastCommand, lastCommand.String())
 		}
 
 		actors := e.actorManager.Get(ret.NextCommand())

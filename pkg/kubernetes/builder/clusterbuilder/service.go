@@ -67,7 +67,7 @@ func NewServiceForCR(cluster *redisv1alpha1.DistributedRedisCluster) *corev1.Ser
 	selectors := GetClusterStatefulsetSelectorLabels(cluster.Name, -1)
 	labels := GetClusterStatefulsetSelectorLabels(cluster.Name, -1)
 	// Set redis arch label, for identifying redis arch in prometheus, so wo can find redis metrics data for redis cluster only.
-	labels[LabelRedisArch] = redis.ClusterArch
+	labels[LabelRedisArch] = string(redis.ClusterArch)
 	ptype := corev1.IPFamilyPolicySingleStack
 	protocol := []corev1.IPFamily{}
 	if cluster.Spec.IPFamilyPrefer == corev1.IPv6Protocol {
@@ -137,7 +137,7 @@ func NewNodePortServiceForCR(cluster *redisv1alpha1.DistributedRedisCluster) *co
 	labels := GetClusterStatefulsetSelectorLabels(cluster.Name, -1)
 	// TODO: remove this
 	// Set redis arch label, for identifying redis arch in prometheus, so wo can find redis metrics data for redis cluster only.
-	labels[LabelRedisArch] = redis.ClusterArch
+	labels[LabelRedisArch] = string(redis.ClusterArch)
 	ptype := corev1.IPFamilyPolicySingleStack
 	protocol := []corev1.IPFamily{}
 	if cluster.Spec.IPFamilyPrefer == corev1.IPv6Protocol {
