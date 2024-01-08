@@ -169,25 +169,6 @@ func NewCommand(ctx context.Context) *cli.Command {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					var (
-						namespace      = c.String("namespace")
-						podName        = c.String("pod-name")
-						workspace      = c.String("workspace")
-						nodeConfigName = c.String("node-config-name")
-					)
-					if namespace == "" {
-						return cli.Exit("require namespace", 1)
-					}
-					if podName == "" {
-						return cli.Exit("require podname", 1)
-					}
-					if workspace == "" {
-						workspace = "/data"
-					}
-					if nodeConfigName == "" {
-						nodeConfigName = "nodes.conf"
-					}
-
 					logger := logger.NewLogger(c).WithName("Heal")
 
 					client, err := client.NewClient()

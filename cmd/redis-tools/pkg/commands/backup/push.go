@@ -19,7 +19,6 @@ package backup
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -60,7 +59,7 @@ func PushFile2S3(ctx context.Context, c *cli.Context, client *kubernetes.Clients
 		logger.Error(err, "S3 client init failed")
 		return err
 	}
-	files, err := ioutil.ReadDir(dataDir)
+	files, err := os.ReadDir(dataDir)
 	if err != nil {
 		logger.Error(err, "Read data dir failed")
 		return err
@@ -91,7 +90,7 @@ func PushFile2S3(ctx context.Context, c *cli.Context, client *kubernetes.Clients
 
 func ReadFileToString(filename string) string {
 	filename = path.Join("/s3_secret", filename)
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		log.Println(err)
 		return ""

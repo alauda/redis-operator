@@ -161,8 +161,8 @@ type FailoverAction string
 
 const (
 	NoFailoverAction       FailoverAction = ""
-	ForceFailoverAction                   = "FORCE"
-	TakeoverFailoverAction                = "TAKEOVER"
+	ForceFailoverAction    FailoverAction = "FORCE"
+	TakeoverFailoverAction FailoverAction = "TAKEOVER"
 )
 
 func doRedisFailover(ctx context.Context, cli redis.Client, action FailoverAction, logger logr.Logger) (err error) {
@@ -376,6 +376,7 @@ func getClusterNodes(c *cli.Context, ctx context.Context, client *kubernetes.Cli
 	return nodes, nil
 }
 
+/*
 func getBindableAddresses(logger logr.Logger) []string {
 	var bindAddrs []string
 	// generate ip list for startup
@@ -420,3 +421,4 @@ func getBindableAddresses(logger logr.Logger) []string {
 	}
 	return bindAddrs
 }
+*/

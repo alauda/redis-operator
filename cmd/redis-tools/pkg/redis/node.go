@@ -42,7 +42,7 @@ type Node struct {
 	LinkState   string
 	slots       []string
 	rawInfo     string
-	slaves      []*Node
+	// slaves      []*Node
 }
 
 func (n *Node) IsSelf() bool {

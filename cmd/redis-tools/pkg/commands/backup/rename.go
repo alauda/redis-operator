@@ -22,7 +22,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -49,7 +48,7 @@ func RenameCluster(ctx context.Context, c *cli.Context, client *kubernetes.Clien
 	dataDir := c.String("data-dir")
 	filePath := path.Join(dataDir, "nodes.json")
 
-	buff, err := ioutil.ReadFile(filePath)
+	buff, err := os.ReadFile(filePath)
 	if err != nil {
 		logger.Error(err, "read nodes.json err")
 		return err
