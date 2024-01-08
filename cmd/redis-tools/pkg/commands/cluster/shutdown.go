@@ -24,8 +24,6 @@ import (
 	"math/rand"
 	"net"
 	"net/netip"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/alauda/redis-operator/cmd/redis-tools/pkg/redis"
@@ -34,10 +32,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 // Shutdown 在退出时做 failover
 //
@@ -175,24 +169,6 @@ func Shutdown(ctx context.Context, c *cli.Context, client *kubernetes.Clientset,
 		logger.Error(err, "graceful shutdown failed")
 	}
 	return nil
-}
-
-// parseStatefulsetIndex parse index of statefulset from pod name
-// eg:
-//
-//	drc-test-0-0 -> 0
-//	drc-abc-dddd-ee11-2-1 -> 2
-func parseStatefulsetIndex(name string) int {
-	if idx := strings.LastIndex(name, "-"); idx > 0 {
-		if idx2 := strings.LastIndex(name[:idx], "-"); idx2 > 0 {
-			if val, err := strconv.Atoi(name[idx2+1 : idx]); err != nil {
-				return -1
-			} else {
-				return val
-			}
-		}
-	}
-	return -1
 }
 
 func getContainerByName(containers []v1.Container, name string) *v1.Container {

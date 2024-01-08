@@ -148,7 +148,7 @@ func NewCommand(ctx context.Context) *cli.Command {
 						logger.Error(err, "load acl failed")
 						return cli.Exit(err, 1)
 					}
-					fmt.Fprintf(os.Stdout, pwd)
+					fmt.Fprint(os.Stdout, pwd)
 					return nil
 				},
 			},

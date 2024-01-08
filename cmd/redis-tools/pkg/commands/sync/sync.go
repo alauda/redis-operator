@@ -42,6 +42,7 @@ func getRedisNodeInfo(redisClient redis.Client, logger logr.Logger) (*redis.Node
 	return nodes.Self(), nodes, nil
 }
 
+/*
 func redisFailover(redisClient redis.Client, logger logr.Logger) error {
 	self, _, err := getRedisNodeInfo(redisClient, logger)
 	if err != nil {
@@ -72,13 +73,14 @@ func redisFailover(redisClient redis.Client, logger logr.Logger) error {
 		}
 	}
 }
+*/
 
 type FailoverAction string
 
 const (
 	NoFailoverAction       FailoverAction = ""
-	ForceFailoverAction                   = "FORCE"
-	TakeoverFailoverAction                = "TAKEOVER"
+	ForceFailoverAction    FailoverAction = "FORCE"
+	TakeoverFailoverAction FailoverAction = "TAKEOVER"
 )
 
 func doRedisFailover(ctx context.Context, cli redis.Client, action FailoverAction, logger logr.Logger) (err error) {
@@ -134,7 +136,9 @@ func SyncToLocal(ctx context.Context, client *kubernetes.Clientset, namespace, n
 		}
 		nodesConfData = cm.Data[target]
 	} else {
-		os.WriteFile(fmt.Sprintf("%s.bak.1", targetFile), data, 0644)
+		if err := os.WriteFile(fmt.Sprintf("%s.bak.1", targetFile), data, 0644); err != nil {
+			logger.Error(err, "backup file failed", "file", targetFile)
+		}
 		nodesConfData = string(data)
 	}
 

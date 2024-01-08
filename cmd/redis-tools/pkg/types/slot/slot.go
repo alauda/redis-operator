@@ -249,10 +249,7 @@ func (s *Slots) Set(v interface{}, status SlotAssignStatus) error {
 // Equals check if this two slots equals (no care about the status)
 func (s *Slots) Equals(old *Slots) bool {
 	if s == nil {
-		if old == nil {
-			return true
-		}
-		return false
+		return old == nil
 	}
 	if old == nil {
 		return false
