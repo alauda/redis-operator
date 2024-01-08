@@ -87,7 +87,7 @@ func (r *RedisUserHandler) Delete(ctx context.Context, instance redismiddlewarea
 			return err
 		}
 		delete(configMap.Data, instance.Spec.Username)
-		if r.k8sClient.UpdateConfigMap(ctx, instance.Namespace, configMap); err != nil {
+		if err := r.k8sClient.UpdateConfigMap(ctx, instance.Namespace, configMap); err != nil {
 			return err
 		}
 	case redis.SentinelArch:
@@ -198,7 +198,7 @@ func (r *RedisUserHandler) Do(ctx context.Context, instance redismiddlewarealaud
 			r.logger.Info("acl set user success", "node", node.GetName())
 		}
 
-		if r.k8sClient.UpdateConfigMap(ctx, instance.Namespace, configmap); err != nil {
+		if err := r.k8sClient.UpdateConfigMap(ctx, instance.Namespace, configmap); err != nil {
 			return err
 		}
 	case redis.SentinelArch:
@@ -236,7 +236,7 @@ func (r *RedisUserHandler) Do(ctx context.Context, instance redismiddlewarealaud
 			}
 			r.logger.Info("acl set user success", "node", node.GetName())
 		}
-		if r.k8sClient.UpdateConfigMap(ctx, instance.Namespace, configmap); err != nil {
+		if err := r.k8sClient.UpdateConfigMap(ctx, instance.Namespace, configmap); err != nil {
 			return err
 		}
 

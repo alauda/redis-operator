@@ -30,7 +30,7 @@ var (
 	MinACL2SupportedVersion, _ = semver.NewVersion("7.0-AAA")
 
 	_Redis5Version, _ = semver.NewVersion("5.0-AAA")
-	_Redis6Version, _ = semver.NewVersion("6.0-AAA")
+	// _Redis6Version, _ = semver.NewVersion("6.0-AAA")
 	_Redis7Version, _ = semver.NewVersion("7.0-AAA")
 )
 
@@ -103,8 +103,6 @@ func (v RedisVersion) CustomConfigs(arch RedisArch) map[string]string {
 		default:
 			ret["cluster-migration-barrier"] = "10"
 		}
-	} else if arch == SentinelArch {
-		// TODO
 	}
 	return ret
 }

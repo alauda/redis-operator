@@ -184,7 +184,7 @@ func (a *actorRebalance) Do(ctx context.Context, val types.RedisInstance) *actor
 			}
 
 			slots := slot.NewSlots()
-			slots.Set(status.Slots, slot.SlotAssigned)
+			_ = slots.Set(status.Slots, slot.SlotAssigned)
 			if as == slot.SlotMigrating {
 				for _, slotIndex := range slots.Slots() {
 					if currentSlots.Status(slotIndex) != slot.SlotAssigned &&

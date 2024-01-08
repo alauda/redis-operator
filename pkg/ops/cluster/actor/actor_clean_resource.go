@@ -84,7 +84,9 @@ func (a *actorCleanResource) Do(ctx context.Context, val types.RedisInstance) *a
 		for i := 0; i < int(cr.Spec.MasterSize) && len(cluster.Shards()) >= int(cr.Spec.MasterSize); i++ {
 			shard := cluster.Shards()[i]
 			for _, node := range shard.Nodes() {
-				node.Setup(ctx, margs...)
+				if err := node.Setup(ctx, margs...); err != nil {
+					logger.Error(err, "forget node failed", "node", node.ID())
+				}
 			}
 		}
 

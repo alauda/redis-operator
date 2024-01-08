@@ -211,7 +211,7 @@ func (c *redisClient) Pipelining(ctx context.Context, cmds []string, args [][]an
 	for _, v := range result {
 		switch v.(type) {
 		case redis.Error:
-			return result, fmt.Errorf("redis error: %s", v.(redis.Error).Error())
+			return result, fmt.Errorf("redis error: %s", v)
 		}
 	}
 	return result, nil

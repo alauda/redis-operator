@@ -104,7 +104,7 @@ func buildRedisConfigs(cluster types.RedisClusterInstance) (string, error) {
 	if cluster != nil && cr.Spec.Resources != nil && cr.Spec.Resources.Limits != nil {
 		osMem, _ := cr.Spec.Resources.Limits.Memory().AsInt64()
 		if configedMem := configMap[RedisConfig_MaxMemory]; configedMem == "" {
-			recommendMem := osMem
+			var recommendMem int64
 			if policy := cr.Spec.Config[RedisConfig_MaxMemoryPolicy]; policy == "noeviction" {
 				recommendMem = int64(float64(osMem) * 0.8)
 			} else {
@@ -153,7 +153,7 @@ func buildRedisConfigs(cluster types.RedisClusterInstance) (string, error) {
 
 		lowerKey, trimVal := strings.ToLower(k), strings.TrimSpace(v)
 		keys = append(keys, lowerKey)
-		if lowerKey != k || strings.ToLower(trimVal) != strings.ToLower(v) {
+		if lowerKey != k || !strings.EqualFold(trimVal, v) {
 			configMap[lowerKey] = trimVal
 		}
 		// TODO: filter illgal config
@@ -190,7 +190,7 @@ func buildRedisConfigs(cluster types.RedisClusterInstance) (string, error) {
 				v = fmt.Sprintf(`"%s"`, v)
 			}
 			if _, ok := MustUpperRedisConfig[k]; ok {
-				v = fmt.Sprintf(`%s`, strings.ToUpper(v))
+				v = strings.ToUpper(v)
 			}
 			buffer.WriteString(fmt.Sprintf("%s %s\n", k, v))
 		}
@@ -224,8 +224,8 @@ type RedisConfigSettingRule string
 
 const (
 	OK             RedisConfigSettingRule = "OK"
-	RequireRestart                        = "Restart"
-	Forbid                                = "Forbid"
+	RequireRestart RedisConfigSettingRule = "Restart"
+	Forbid         RedisConfigSettingRule = "Forbid"
 )
 
 var RedisConfigRestartPolicy = map[string]RedisConfigSettingRule{
@@ -316,10 +316,10 @@ func LoadRedisConfig(data string) (RedisConfig, error) {
 
 // Diff return diff two n RedisConfig
 func (o RedisConfig) Diff(n RedisConfig) (added, changed, deleted map[string]RedisConfigValues) {
-	if n == nil || len(n) == 0 {
+	if len(n) == 0 {
 		return nil, nil, o
 	}
-	if o == nil || len(o) == 0 {
+	if len(o) == 0 {
 		return n, nil, nil
 	}
 

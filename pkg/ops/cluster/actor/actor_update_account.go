@@ -369,11 +369,11 @@ func (a *actorUpdateAccount) Do(ctx context.Context, val types.RedisInstance) *a
 				for _, node := range shard.Nodes() {
 					if !node.IsReady() || node.IsTerminating() || node.Role() == redis.RedisRoleMaster {
 						break
+					} else {
+						_ = node.Setup(ctx, []interface{}{"cluster", "failover"})
+						time.Sleep(time.Second * 5)
+						break
 					}
-
-					node.Setup(ctx, []interface{}{"cluster", "failover"})
-					time.Sleep(time.Second * 5)
-					break
 				}
 			}
 
@@ -409,7 +409,7 @@ func (a *actorUpdateAccount) Do(ctx context.Context, val types.RedisInstance) *a
 			// we must wait about 60s (repl-timeout) for them to take effect
 			// logger.Info(fmt.Sprintf("wait %ds repl-timeout for slave to reconnect to master", timeout))
 
-			cluster.UpdateStatus(ctx, v1alpha1.ClusterStatusRollingUpdate, "updating password", nil)
+			_ = cluster.UpdateStatus(ctx, v1alpha1.ClusterStatusRollingUpdate, "updating password", nil)
 			return nil
 		}
 	}
@@ -427,7 +427,7 @@ func formatACLSetCommand(u *user.User) (args []interface{}) {
 		return nil
 	}
 	if len(u.Rules) == 0 {
-		u.AppendRule(&user.Rule{
+		_ = u.AppendRule(&user.Rule{
 			Categories:  []string{"all"},
 			KeyPatterns: []string{"*"},
 		})

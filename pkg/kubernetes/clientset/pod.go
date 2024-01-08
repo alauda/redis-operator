@@ -211,8 +211,10 @@ func (p *PodOption) Exec(ctx context.Context, namespace, name, containerName str
 	var stdout, stderr bytes.Buffer
 	if exec, err := remotecommand.NewSPDYExecutor(p.restConfig, "POST", req.URL()); err != nil {
 		return nil, nil, err
-	} else if err = exec.Stream(remotecommand.StreamOptions{Stdout: &stdout, Stderr: &stderr, Tty: true}); err != nil {
-		return nil, nil, err
+	} else {
+		if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{Stdout: &stdout, Stderr: &stderr, Tty: true}); err != nil {
+			return nil, nil, err
+		}
 	}
 	return &stdout, &stderr, nil
 }

@@ -285,7 +285,7 @@ func formatACLSetCommand(u *user.User) (args []interface{}) {
 		return nil
 	}
 	if len(u.Rules) == 0 {
-		u.AppendRule(&user.Rule{
+		_ = u.AppendRule(&user.Rule{
 			Categories:  []string{"all"},
 			KeyPatterns: []string{"*"},
 		})

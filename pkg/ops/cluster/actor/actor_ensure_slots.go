@@ -189,7 +189,7 @@ func (a *actorEnsureSlots) Do(ctx context.Context, val types.RedisInstance) *act
 	for _, shardStatus := range cluster.Definition().Status.Shards {
 		assignedSlots := slot.NewSlots()
 		for _, status := range shardStatus.Slots {
-			assignedSlots.Set(status.Slots, slot.NewSlotAssignStatusFromString(status.Status))
+			_ = assignedSlots.Set(status.Slots, slot.NewSlotAssignStatusFromString(status.Status))
 		}
 		shard := shardsSlots[int(shardStatus.Index)]
 		node := shard.Master()

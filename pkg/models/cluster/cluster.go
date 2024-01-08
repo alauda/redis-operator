@@ -49,10 +49,10 @@ type RedisCluster struct {
 	client     clientset.ClientSet
 	redisUsers []*redismiddlewarealaudaiov1.RedisUser
 	shards     []types.RedisClusterShard
-	version    redis.RedisVersion
-	users      acl.Users
-	tlsConfig  *tls.Config
-	configmap  map[string]string
+	// version    redis.RedisVersion
+	users     acl.Users
+	tlsConfig *tls.Config
+	configmap map[string]string
 
 	logger logr.Logger
 }
@@ -142,7 +142,7 @@ func (c *RedisCluster) Refresh(ctx context.Context) error {
 		logger.Error(err, "get DistributedRedisCluster failed")
 		return err
 	}
-	cr.Init()
+	_ = cr.Init()
 	c.DistributedRedisCluster = cr
 
 	var err error
@@ -330,7 +330,7 @@ func (c *RedisCluster) UpdateStatus(ctx context.Context, status clusterv1.Cluste
 		logger.Error(err, "get DistributedRedisCluster failed")
 		return err
 	}
-	cr.Init()
+	_ = cr.Init()
 
 	return nil
 }

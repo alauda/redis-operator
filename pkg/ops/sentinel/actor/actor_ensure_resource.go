@@ -36,7 +36,6 @@ import (
 	"github.com/alauda/redis-operator/pkg/ops/sentinel"
 	sops "github.com/alauda/redis-operator/pkg/ops/sentinel"
 	"github.com/alauda/redis-operator/pkg/types"
-	"github.com/alauda/redis-operator/pkg/types/user"
 	"github.com/alauda/redis-operator/pkg/util"
 	"github.com/go-logr/logr"
 	appv1 "k8s.io/api/apps/v1"
@@ -251,6 +250,7 @@ func (a *actorEnsureResource) ensurePodDisruptionBudget(ctx context.Context, rf 
 	return nil
 }
 
+/*
 func (a *actorEnsureResource) ensureRedisUser(ctx context.Context, sentinel types.RedisFailoverInstance, logger logr.Logger) *actor.ActorResult {
 	if !sentinel.Version().IsACLSupported() {
 		return nil
@@ -287,6 +287,7 @@ func (a *actorEnsureResource) ensureRedisUser(ctx context.Context, sentinel type
 	}
 	return nil
 }
+*/
 
 func (a *actorEnsureResource) ensureConfigMap(ctx context.Context, sentinel types.RedisFailoverInstance, logger logr.Logger) *actor.ActorResult {
 	cr := sentinel.Definition()
@@ -455,7 +456,7 @@ func (a *actorEnsureResource) ensureRedisSSL(ctx context.Context, rf *v1.RedisFa
 		}
 
 		// check when the certificate created
-		if time.Now().Sub(oldCert.GetCreationTimestamp().Time) > time.Minute*5 {
+		if time.Since(oldCert.GetCreationTimestamp().Time) > time.Minute*5 {
 			return actor.NewResultWithError(sops.CommandAbort, fmt.Errorf("issue for tls certificate failed, please check the cert-manager"))
 		}
 	}
@@ -612,7 +613,7 @@ func (a *actorEnsureResource) ensureService(ctx context.Context, sentinel types.
 				return actor.NewResultWithError(sops.CommandRequeue, err)
 			}
 		}
-		if a.client.UpdateIfSelectorChangedService(ctx, sentinel.GetNamespace(), senService); err != nil {
+		if err := a.client.UpdateIfSelectorChangedService(ctx, sentinel.GetNamespace(), senService); err != nil {
 			return actor.NewResultWithError(sops.CommandRequeue, err)
 		}
 	}
@@ -754,10 +755,10 @@ func (a *actorEnsureResource) ensureBackupSchedule(ctx context.Context, st types
 	}
 
 	// check backup schedule
-	var desiredCronJob []string
-	for _, b := range cr.Spec.Redis.Backup.Schedule {
-		desiredCronJob = append(desiredCronJob, clusterbuilder.GenerateCronJobName(cr.Name, b.Name))
-	}
+	// var desiredCronJob []string
+	// for _, b := range cr.Spec.Redis.Backup.Schedule {
+	// 	desiredCronJob = append(desiredCronJob, clusterbuilder.GenerateCronJobName(cr.Name, b.Name))
+	// }
 
 	selectorLabels := map[string]string{
 		"redisfailovers.databases.spotahome.com/name": cr.Name,

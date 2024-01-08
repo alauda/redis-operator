@@ -536,7 +536,7 @@ func buildStatusOfShards(cluster types.RedisClusterInstance, slots []*slot.Slots
 		for _, shard := range statusShards {
 			shardSlot := slot.NewSlots()
 			for _, status := range shard.Slots {
-				shardSlot.Set(status.Slots, slot.NewSlotAssignStatusFromString(status.Status))
+				_ = shardSlot.Set(status.Slots, slot.NewSlotAssignStatusFromString(status.Status))
 			}
 			oldShards = append(oldShards, shardSlot)
 
@@ -567,14 +567,14 @@ func buildStatusOfShards(cluster types.RedisClusterInstance, slots []*slot.Slots
 					if tmpSlot := importingSubGroup[shardIndex]; tmpSlot == nil {
 						importingSubGroup[shardIndex] = slot.NewSlots()
 					}
-					importingSubGroup[shardIndex].Set(slotIndex, slot.SlotAssigned)
+					_ = importingSubGroup[shardIndex].Set(slotIndex, slot.SlotAssigned)
 				}
 				for _, slotIndex := range newRemovedSlots.Slots() {
 					shardIndex := slotsFutureShard[slotIndex]
 					if tmpSlot := migratingSubGroup[shardIndex]; tmpSlot == nil {
 						migratingSubGroup[shardIndex] = slot.NewSlots()
 					}
-					migratingSubGroup[shardIndex].Set(slotIndex, slot.SlotAssigned)
+					_ = migratingSubGroup[shardIndex].Set(slotIndex, slot.SlotAssigned)
 				}
 				importingGroup[i] = importingSubGroup
 				migratingGroup[i] = migratingSubGroup
@@ -600,35 +600,35 @@ func buildStatusOfShards(cluster types.RedisClusterInstance, slots []*slot.Slots
 
 			for _, status := range statusShard.Slots {
 				if status.Status == slot.SlotAssigned.String() {
-					assignedSlots.Set(status.Slots, slot.SlotAssigned)
+					_ = assignedSlots.Set(status.Slots, slot.SlotAssigned)
 				}
 			}
 			for _, status := range statusShard.Slots {
 				if status.Status == slot.SlotImporting.String() {
 					tmpSlots := slot.NewSlots()
-					tmpSlots.Set(status.Slots, slot.SlotAssigned)
+					_ = tmpSlots.Set(status.Slots, slot.SlotAssigned)
 					for _, slotIndex := range tmpSlots.Slots() {
 						// import succeed
 						if shardIndex, ok := slotsCurrentShard[slotIndex]; ok && shardIndex == i {
-							assignedSlots.Set(slotIndex, slot.SlotAssigned)
+							_ = assignedSlots.Set(slotIndex, slot.SlotAssigned)
 						} else {
 							if tmpSlot := importingSubGroup[int(*status.ShardIndex)]; tmpSlot == nil {
 								importingSubGroup[int(*status.ShardIndex)] = slot.NewSlots()
 							}
-							importingSubGroup[int(*status.ShardIndex)].Set(slotIndex, slot.SlotAssigned)
+							_ = importingSubGroup[int(*status.ShardIndex)].Set(slotIndex, slot.SlotAssigned)
 						}
 					}
 				} else if status.Status == slot.SlotMigrating.String() {
 					tmpSlots := slot.NewSlots()
-					tmpSlots.Set(status.Slots, slot.SlotAssigned)
+					_ = tmpSlots.Set(status.Slots, slot.SlotAssigned)
 					for _, slotIndex := range tmpSlots.Slots() {
 						if shardIndex, ok := slotsCurrentShard[slotIndex]; ok && shardIndex == int(*status.ShardIndex) {
-							assignedSlots.Set(slotIndex, slot.SlotUnAssigned)
+							_ = assignedSlots.Set(slotIndex, slot.SlotUnAssigned)
 						} else {
 							if tmpSlot := migratingSubGroup[int(*status.ShardIndex)]; tmpSlot == nil {
 								migratingSubGroup[int(*status.ShardIndex)] = slot.NewSlots()
 							}
-							migratingSubGroup[int(*status.ShardIndex)].Set(slotIndex, slot.SlotAssigned)
+							_ = migratingSubGroup[int(*status.ShardIndex)].Set(slotIndex, slot.SlotAssigned)
 						}
 					}
 				}

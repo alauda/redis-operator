@@ -47,14 +47,14 @@ type RedisFailover struct {
 	redisUsers []*redismiddlewarealaudaiov1.RedisUser
 	ctx        context.Context
 	client     clientset.ClientSet
-	version    redis.RedisVersion
-	users      acl.Users
-	tlsConfig  *tls.Config
-	configmap  map[string]string
-	replicas   []types.RedisSentinelReplica
-	sentinel   types.RedisSentinelNodes
-	logger     logr.Logger
-	selector   map[string]string
+	// version    redis.RedisVersion
+	users     acl.Users
+	tlsConfig *tls.Config
+	configmap map[string]string
+	replicas  []types.RedisSentinelReplica
+	sentinel  types.RedisSentinelNodes
+	logger    logr.Logger
+	// selector   map[string]string
 }
 
 func NewRedisFailover(ctx context.Context, k8sClient clientset.ClientSet, def *databasesv1.RedisFailover, logger logr.Logger) (*RedisFailover, error) {
@@ -245,10 +245,7 @@ func (c *RedisFailover) Sentinel() types.RedisSentinelNodes {
 }
 
 func (c *RedisFailover) IsInService() bool {
-	if c == nil {
-		return false
-	}
-	return true
+	return c != nil
 }
 
 func (c *RedisFailover) IsReady() bool {

@@ -40,7 +40,7 @@ func uniqueArr(m []string) []string {
 	d := make([]string, 0)
 	result := make(map[string]bool, len(m))
 	for _, v := range m {
-		if result[v] == false {
+		if !result[v] {
 			result[v] = true
 			d = append(d, v)
 		}

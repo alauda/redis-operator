@@ -359,13 +359,13 @@ func NewRedisConfigMap(st types.RedisFailoverInstance, selectors map[string]stri
 				v = fmt.Sprintf(`"%s"`, v)
 			}
 			if _, ok := MustUpperRedisConfig[k]; ok {
-				v = fmt.Sprintf(`%s`, strings.ToUpper(v))
+				v = strings.ToUpper(v)
 			}
 			buffer.WriteString(fmt.Sprintf("%s %s\n", k, v))
 		}
 	}
 
-	entrypoint := fmt.Sprintf(`#!/bin/sh
+	entrypoint := `#!/bin/sh
 CONFIG_FILE="/tmp/redis.conf"
 cat /redis/redis.conf > $CONFIG_FILE
 REDIS_PASSWORD=$(cat /account/password)
@@ -423,7 +423,7 @@ fi
 chmod 0640 $CONFIG_FILE
 chmod 0640 $ACL_CONFIG
 
-redis-server $CONFIG_FILE ${ACL_ARGS} ${ARGS} $@`)
+redis-server $CONFIG_FILE ${ACL_ARGS} ${ARGS} $@`
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{

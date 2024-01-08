@@ -283,7 +283,7 @@ func generateBackupJob(backup *redisbackupv1.RedisBackup, labels map[string]stri
 							},
 
 							Command: []string{"/bin/sh"},
-							Args:    []string{"-c", fmt.Sprintf("/opt/redis-tools backup backup")},
+							Args:    []string{"-c", "/opt/redis-tools backup backup"},
 						},
 					},
 					Volumes: []corev1.Volume{
