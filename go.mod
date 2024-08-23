@@ -14,7 +14,7 @@ require (
 	github.com/samber/lo v1.46.0
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.27.4
-	go.uber.org/zap v1.25.0
+	go.uber.org/zap v1.27.0
 	gotest.tools/v3 v3.0.3
 	k8s.io/api v0.28.11
 	k8s.io/apimachinery v0.28.11
