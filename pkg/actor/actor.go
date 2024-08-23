@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,12 +19,9 @@ package actor
 import (
 	"context"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/alauda/redis-operator/pkg/types"
 )
-
-type Command interface {
-	String() string
-}
 
 // ActorResult
 type ActorResult struct {
@@ -42,6 +39,22 @@ func NewResultWithValue(cmd Command, val interface{}) *ActorResult {
 
 func NewResultWithError(cmd Command, err error) *ActorResult {
 	return &ActorResult{next: cmd, result: err}
+}
+
+func Requeue() *ActorResult {
+	return &ActorResult{next: CommandRequeue}
+}
+
+func RequeueWithError(err error) *ActorResult {
+	return &ActorResult{next: CommandRequeue, result: err}
+}
+
+func Pause() *ActorResult {
+	return &ActorResult{next: CommandPaused}
+}
+
+func AbortWithError(err error) *ActorResult {
+	return &ActorResult{next: CommandAbort, result: err}
 }
 
 // Next
@@ -73,6 +86,11 @@ func (c *ActorResult) Err() error {
 
 // Actor actor is used process instance with specified state
 type Actor interface {
+	// SupportedCommands return the supported commands of the actor
 	SupportedCommands() []Command
+	// Version return the version of the actor
+	// if the version is different from the previous version, the actor will be reloaded
+	Version() *semver.Version
+	// Do run the actor
 	Do(ctx context.Context, cluster types.RedisInstance) *ActorResult
 }

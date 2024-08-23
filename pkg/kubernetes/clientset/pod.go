@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,9 +21,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 
 	"github.com/go-logr/logr"
+	"github.com/samber/lo"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +34,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
-	"k8s.io/utils/pointer"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
@@ -48,7 +50,7 @@ type Pod interface {
 	// CreateOrUpdatePod will update the given pod or create it if does not exist
 	CreateOrUpdatePod(ctx context.Context, namespace string, pod *corev1.Pod) error
 	// DeletePod will delete the given pod
-	DeletePod(ctx context.Context, namespace string, name string, force ...bool) error
+	DeletePod(ctx context.Context, namespace string, name string, opts ...client.DeleteOption) error
 	// ListPodByLabels
 	ListPodByLabels(ctx context.Context, namespace string, label_map map[string]string) (*corev1.PodList, error)
 	// ListPods get set of pod on a given namespace
@@ -76,13 +78,9 @@ func NewPod(kubeClient client.Client, restConfig *rest.Config, logger logr.Logge
 		client:     kubeClient,
 		logger:     logger,
 	}
-	httpClient, err := rest.HTTPClientFor(restConfig)
-	if err != nil {
-		panic(err)
-	}
 
 	if restConfig != nil {
-		restClient, err := apiutil.RESTClientForGVK(corev1.SchemeGroupVersion.WithKind("Pod"), false, restConfig, scheme.Codecs, httpClient)
+		restClient, err := apiutil.RESTClientForGVK(corev1.SchemeGroupVersion.WithKind("Pod"), false, restConfig, scheme.Codecs, http.DefaultClient)
 		if err != nil {
 			panic(err)
 		}
@@ -111,18 +109,24 @@ func (p *PodOption) CreatePod(ctx context.Context, namespace string, pod *corev1
 		return err
 	}
 
-	p.logger.WithValues("namespace", namespace, "pod", pod.Name).Info("pod created")
+	p.logger.WithValues("namespace", namespace, "pod", pod.Name).V(3).Info("pod created")
 	return nil
 }
 
-// UpdatePod implement the Pod.Interface
+// UpdatePod only overwrite labels/annotations of the pod
 func (p *PodOption) UpdatePod(ctx context.Context, namespace string, pod *corev1.Pod) error {
-	err := p.client.Update(ctx, pod)
-	if err != nil {
-		return err
-	}
-	p.logger.WithValues("namespace", namespace, "pod", pod.Name).Info("pod updated")
-	return nil
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		oldPod, err := p.GetPod(ctx, namespace, pod.Name)
+		if errors.IsNotFound(err) {
+			return nil
+		} else if err != nil {
+			return err
+		}
+		oldPod.Labels = lo.Assign(oldPod.Labels, pod.Labels)
+		oldPod.Annotations = lo.Assign(oldPod.Annotations, pod.Annotations)
+
+		return p.client.Update(ctx, pod)
+	})
 }
 
 // CreateOrUpdatePod implement the Pod.Interface
@@ -145,7 +149,7 @@ func (p *PodOption) CreateOrUpdatePod(ctx context.Context, namespace string, pod
 }
 
 // DeletePod implement the Pod.Interface
-func (p *PodOption) DeletePod(ctx context.Context, namespace string, name string, force ...bool) error {
+func (p *PodOption) DeletePod(ctx context.Context, namespace string, name string, opts ...client.DeleteOption) error {
 	pod := &corev1.Pod{}
 	if err := p.client.Get(ctx, types.NamespacedName{
 		Name:      name,
@@ -153,11 +157,7 @@ func (p *PodOption) DeletePod(ctx context.Context, namespace string, name string
 	}, pod); err != nil {
 		return err
 	}
-	opts := client.DeleteOptions{}
-	if len(force) > 0 && force[0] {
-		opts.GracePeriodSeconds = pointer.Int64(0)
-	}
-	return p.client.Delete(ctx, pod, &opts)
+	return p.client.Delete(ctx, pod, opts...)
 }
 
 // ListPods implement the Pod.Interface
@@ -211,10 +211,8 @@ func (p *PodOption) Exec(ctx context.Context, namespace, name, containerName str
 	var stdout, stderr bytes.Buffer
 	if exec, err := remotecommand.NewSPDYExecutor(p.restConfig, "POST", req.URL()); err != nil {
 		return nil, nil, err
-	} else {
-		if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{Stdout: &stdout, Stderr: &stderr, Tty: true}); err != nil {
-			return nil, nil, err
-		}
+	} else if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{Stdout: &stdout, Stderr: &stderr, Tty: true}); err != nil {
+		return nil, nil, err
 	}
 	return &stdout, &stderr, nil
 }

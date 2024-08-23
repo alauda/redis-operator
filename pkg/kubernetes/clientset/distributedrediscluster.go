@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,15 +18,21 @@ package clientset
 
 import (
 	"context"
+	"reflect"
 
-	clusterv1 "github.com/alauda/redis-operator/api/redis.kun/v1alpha1"
+	clusterv1 "github.com/alauda/redis-operator/api/cluster/v1alpha1"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type DistributedRedisCluster interface {
 	GetDistributedRedisCluster(ctx context.Context, namespace, name string) (*clusterv1.DistributedRedisCluster, error)
+	// UpdateRedisFailover update the redisfailover on a cluster.
+	UpdateDistributedRedisCluster(ctx context.Context, inst *clusterv1.DistributedRedisCluster) error
+	// UpdateRedisFailoverStatus
+	UpdateDistributedRedisClusterStatus(ctx context.Context, inst *clusterv1.DistributedRedisCluster) error
 }
 
 type DistributedRedisClusterOption struct {
@@ -35,7 +41,7 @@ type DistributedRedisClusterOption struct {
 }
 
 func NewDistributedRedisCluster(kubeClient client.Client, logger logr.Logger) DistributedRedisCluster {
-	logger = logger.WithValues("service", "k8s.deployment")
+	logger = logger.WithName("DistributedRedisCluster")
 	return &DistributedRedisClusterOption{
 		client: kubeClient,
 		logger: logger,
@@ -52,4 +58,33 @@ func (r *DistributedRedisClusterOption) GetDistributedRedisCluster(ctx context.C
 		return nil, err
 	}
 	return &ret, nil
+}
+
+// UpdateRedisFailover
+func (r *DistributedRedisClusterOption) UpdateDistributedRedisCluster(ctx context.Context, inst *clusterv1.DistributedRedisCluster) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var oldInst clusterv1.DistributedRedisCluster
+		if err := r.client.Get(ctx, client.ObjectKeyFromObject(inst), &oldInst); err != nil {
+			r.logger.Error(err, "get DistributedRedisCluster failed")
+			return err
+		}
+		inst.ResourceVersion = oldInst.ResourceVersion
+		return r.client.Update(ctx, inst)
+	})
+}
+
+func (r *DistributedRedisClusterOption) UpdateDistributedRedisClusterStatus(ctx context.Context, inst *clusterv1.DistributedRedisCluster) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var oldInst clusterv1.DistributedRedisCluster
+		if err := r.client.Get(ctx, client.ObjectKeyFromObject(inst), &oldInst); err != nil {
+			r.logger.Error(err, "get DistributedRedisCluster failed")
+			return err
+		}
+
+		if !reflect.DeepEqual(oldInst.Status, inst.Status) {
+			inst.ResourceVersion = oldInst.ResourceVersion
+			return r.client.Status().Update(ctx, inst)
+		}
+		return nil
+	})
 }

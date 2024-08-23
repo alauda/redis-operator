@@ -62,22 +62,38 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.annotations['redisDefaultImage']
+            - name: REDIS_VERSION_5_IMAGE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['redisVersion5Image']
+            - name: REDIS_VERSION_5_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['redisVersion5Version']
             - name: REDIS_VERSION_6_IMAGE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.annotations['redisVersion6Image']
-            - name: REDIS_VERSION_6_2_IMAGE
+            - name: REDIS_VERSION_6_VERSION
               valueFrom:
                 fieldRef:
-                  fieldPath: metadata.annotations['redisVersion62Image']
-            - name: REDIS_VERSION_7_IMAGE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.annotations['redisVersion7Image']
+                  fieldPath: metadata.annotations['redisVersion6Version']
             - name: REDIS_VERSION_7_2_IMAGE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.annotations['redisVersion72Image']
+            - name: REDIS_VERSION_7_2_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['redisVersion72Version']
+            - name: REDIS_VERSION_7_4_IMAGE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['redisVersion74Image']
+            - name: REDIS_VERSION_7_4_VERSION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['redisVersion74Version']
             - name: DEFAULT_EXPORTER_IMAGE
               valueFrom:
                 fieldRef:
@@ -86,10 +102,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.annotations['olm.targetNamespaces']
-            - name: REDIS_TOOLS_IMAGE
+            - name: REDIS_TOOLS_IMAGE 
               valueFrom:
                 fieldRef:
-                  fieldPath: spec.containers[0].image
+                  fieldPath: metadata.annotations['redisToolsImage']
             - name: POD_NAME
               valueFrom:
                 fieldRef:
@@ -106,3 +122,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.annotations['operatorVersion']
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true

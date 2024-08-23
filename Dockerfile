@@ -1,27 +1,31 @@
-FROM golang:1.20 as builder
+FROM golang:1.22-alpine as builder
+
 WORKDIR /workspace
 
-COPY . .
+# Dependencies are cached unless we change go.mod or go.sum
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN GOPROXY=https://goproxy.io,direct go mod download
 
-ENV GOPROXY=https://goproxy.io,direct
-# Build
-RUN CGO_ENABLED=1 go build -buildmode=pie -ldflags '-extldflags "-Wl,-z,relro,-z,now" -linkmode=external -w -s' -a -o manager cmd/main.go && go build -buildmode=pie -ldflags '-extldflags "-Wl,-z,relro,-z,now" -linkmode=external -w -s' -a -o redis-tools cmd/redis-tools/main.go
+# Copy the go source
+COPY api/ api/
+COPY cmd/ cmd/
+COPY internal/ internal/
+COPY pkg/ pkg/
+COPY tools/ tools/
+
+
+RUN CGO_ENABLED=0 go build -a -tags timetzdata -buildmode=pie -ldflags '-extldflags "-Wl,-z,relro,-z,now"' -a -o manager cmd/main.go 
+RUN CGO_ENABLED=0 go build -a -tags timetzdata -buildmode=pie -ldflags '-extldflags "-Wl,-z,relro,-z,now"' -a -o redis-tools cmd/redis-tools/main.go
+
 
 FROM redis:7.2-alpine
 
-COPY --from=builder /workspace/manager .
-COPY --from=builder /workspace/redis-tools /opt/
-COPY --from=builder /workspace/cmd/redis-tools/scripts/ /opt/
-
 RUN apk add --no-cache gcompat
 
-RUN ARCH= &&dpkgArch="$(arch)" \
-  && case "${dpkgArch}" in \
-    x86_64) ARCH='amd64';; \
-    aarch64) ARCH='arm64';; \
-    *) echo "unsupported architecture"; exit 1 ;; \
-  esac \
-  && wget https://storage.googleapis.com/kubernetes-release/release/v1.28.3/bin/linux/${ARCH}/kubectl -O /bin/kubectl && chmod +x /bin/kubectl
+COPY --from=builder /workspace/manager .
+COPY --from=builder /workspace/redis-tools /opt/
+COPY --from=builder /workspace/tools/ /opt/
 
 ENV PATH="/opt:$PATH"
 

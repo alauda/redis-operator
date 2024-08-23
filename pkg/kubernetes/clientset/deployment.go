@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -142,7 +143,7 @@ func (d *DeploymentOption) CreateDeployment(ctx context.Context, namespace strin
 	if err != nil {
 		return err
 	}
-	d.logger.WithValues("namespace", namespace, "deployment", deployment.ObjectMeta.Name).Info("deployment created")
+	d.logger.WithValues("namespace", namespace, "deployment", deployment.ObjectMeta.Name).V(3).Info("deployment created")
 	return err
 }
 
@@ -152,27 +153,23 @@ func (d *DeploymentOption) UpdateDeployment(ctx context.Context, namespace strin
 	if err != nil {
 		return err
 	}
-	d.logger.WithValues("namespace", namespace, "deployment", deployment.ObjectMeta.Name).Info("deployment updated")
+	d.logger.WithValues("namespace", namespace, "deployment", deployment.ObjectMeta.Name).V(3).Info("deployment updated")
 	return err
 }
 
 // CreateOrUpdateDeployment implement the Deployment.Interface
 func (d *DeploymentOption) CreateOrUpdateDeployment(ctx context.Context, namespace string, deployment *appsv1.Deployment) error {
-	storedDeployment, err := d.GetDeployment(ctx, namespace, deployment.Name)
-	if err != nil {
-		// If no resource we need to create.
-		if errors.IsNotFound(err) {
-			return d.CreateDeployment(ctx, namespace, deployment)
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		storedDeployment, err := d.GetDeployment(ctx, namespace, deployment.Name)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				return d.CreateDeployment(ctx, namespace, deployment)
+			}
+			return err
 		}
-		return err
-	}
-
-	// Already exists, need to Update.
-	// Set the correct resource version to ensure we are on the latest version. This way the only valid
-	// namespace is our spec(https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#concurrency-control-and-consistency),
-	// we will replace the current namespace state.
-	deployment.ResourceVersion = storedDeployment.ResourceVersion
-	return d.UpdateDeployment(ctx, namespace, deployment)
+		deployment.ResourceVersion = storedDeployment.ResourceVersion
+		return d.UpdateDeployment(ctx, namespace, deployment)
+	})
 }
 
 // DeleteDeployment implement the Deployment.Interface

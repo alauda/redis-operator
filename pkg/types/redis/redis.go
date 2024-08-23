@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,49 +21,26 @@ import (
 	"net"
 	"strings"
 
+	"github.com/alauda/redis-operator/api/core"
 	rediscli "github.com/alauda/redis-operator/pkg/redis"
-	"github.com/alauda/redis-operator/pkg/types/slot"
+	"github.com/alauda/redis-operator/pkg/slot"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-type RedisArch string
+type RedisArch = core.Arch
 
-const (
-	StandaloneArch RedisArch = "standalone"
-	SentinelArch   RedisArch = "sentinel"
-	ClusterArch    RedisArch = "cluster"
-)
-
-type SentinelRole string
-
-const (
-	SentinelRoleMaster   SentinelRole = "master"
-	SentinelRoleSlave    SentinelRole = "slave"
-	SentinelRoleSentinel SentinelRole = "sentinel"
-)
-
-// RedisRole redis node role type
-type RedisRole string
-
-const (
-	// RedisRoleMaster RedisCluster Master node role
-	RedisRoleMaster RedisRole = "Master"
-	// RedisRoleSlave RedisCluster Master node role
-	RedisRoleSlave RedisRole = "Slave"
-	// RedisNodeRoleNone None node role
-	RedisRoleNone RedisRole = "None"
-)
-
-func NewRedisRole(v string) RedisRole {
+func NewRedisRole(v string) core.RedisRole {
 	switch strings.ToLower(v) {
 	case "master":
-		return RedisRoleMaster
+		return core.RedisRoleMaster
 	case "slave", "replica":
-		return RedisRoleSlave
+		return core.RedisRoleReplica
+	case "sentinel":
+		return core.RedisRoleSentinel
 	}
-	return RedisRoleNone
+	return core.RedisRoleNone
 }
 
 // RedisNode
@@ -101,22 +78,21 @@ type RedisNode interface {
 
 	// Role returns the role of current node
 	// be sure that for the new start redis server, the role is master when in cluster mode
-	Role() RedisRole
+	Role() core.RedisRole
 	// Slots if this node is master, returns the slots this nodes assigned
 	// else returns nil
 	Slots() *slot.Slots
 
-	GetPod() *corev1.Pod
 	Config() map[string]string
 	ConfigedMasterIP() string
 	ConfigedMasterPort() string
 	// Setup
 	Setup(ctx context.Context, margs ...[]any) error
-	SetMonitor(ctx context.Context, ip, port, user, password, quorum string) error
 	ReplicaOf(ctx context.Context, ip, port string) error
 	SetACLUser(ctx context.Context, username string, passwords []string, rules string) (interface{}, error)
 	Query(ctx context.Context, cmd string, args ...any) (any, error)
 	Info() rediscli.RedisInfo
+	ClusterInfo() rediscli.RedisClusterInfo
 
 	IPort() int
 	InternalIPort() int
@@ -131,4 +107,52 @@ type RedisNode interface {
 	ContainerStatus() *corev1.ContainerStatus
 
 	Refresh(ctx context.Context) error
+}
+
+// RedisSentinelNode
+type RedisSentinelNode interface {
+	metav1.Object
+	RedisSentinelNodeOperation
+	GetObjectKind() schema.ObjectKind
+
+	Definition() *corev1.Pod
+
+	// Index the index of statefulset
+	Index() int
+	// IsTerminating indicate whether is pod is deleted
+	IsTerminating() bool
+	// IsReady indicate whether is main container is ready
+	IsReady() bool
+	// IsACLApplied returns true when the main container got ACL_CONFIGMAP_NAME env
+	IsACLApplied() bool
+
+	Port() int
+	InternalPort() int
+	DefaultIP() net.IP
+	DefaultInternalIP() net.IP
+	IPs() []net.IP
+	NodeIP() net.IP
+
+	Status() corev1.PodPhase
+	ContainerStatus() *corev1.ContainerStatus
+}
+
+type RedisSentinelNodeOperation interface {
+	// CurrentVersion return current redis server version
+	// this value maybe differ with cr def when do version upgrade
+	CurrentVersion() RedisVersion
+
+	Refresh(ctx context.Context) error
+
+	Config() map[string]string
+
+	// Setup
+	Setup(ctx context.Context, margs ...[]any) error
+	SetMonitor(ctx context.Context, name, ip, port, user, password, quorum string) error
+	Query(ctx context.Context, cmd string, args ...any) (any, error)
+	Info() rediscli.RedisInfo
+	// sentinel inspect
+	Brothers(ctx context.Context, name string) ([]*rediscli.SentinelMonitorNode, error)
+	MonitoringClusters(ctx context.Context) (clusters []string, err error)
+	MonitoringNodes(ctx context.Context, name string) (master *rediscli.SentinelMonitorNode, replicas []*rediscli.SentinelMonitorNode, err error)
 }

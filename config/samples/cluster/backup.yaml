@@ -1,0 +1,9 @@
+apiVersion: redis.middleware.alauda.io/v1
+kind: RedisClusterBackup
+metadata:
+  name: redis-cluster-backup-demo
+spec:
+  source:
+    redisClusterName: redis-cluster-demo
+    storageClassName: ''
+  storage: 1Gi

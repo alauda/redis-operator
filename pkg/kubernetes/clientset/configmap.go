@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -80,18 +81,20 @@ func (p *ConfigMapOption) CreateConfigMap(ctx context.Context, namespace string,
 	if err != nil {
 		return err
 	}
-	p.logger.WithValues("namespace", namespace, "configMap", configMap.Name).Info("configMap created")
+	p.logger.WithValues("namespace", namespace, "configMap", configMap.Name).V(3).Info("configMap created")
 	return nil
 }
 
 // UpdateConfigMap implement the  ConfigMap.Interface
 func (p *ConfigMapOption) UpdateConfigMap(ctx context.Context, namespace string, configMap *corev1.ConfigMap) error {
-	err := p.client.Update(ctx, configMap)
-	if err != nil {
-		return err
-	}
-	p.logger.WithValues("namespace", namespace, "configMap", configMap.Name).Info("configMap updated")
-	return nil
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		oldCm, err := p.GetConfigMap(ctx, namespace, configMap.Name)
+		if err != nil {
+			return err
+		}
+		configMap.ResourceVersion = oldCm.ResourceVersion
+		return p.client.Update(ctx, configMap)
+	})
 }
 
 // CreateIfNotExistsConfigMap implement the ConfigMap.Interface
@@ -153,7 +156,6 @@ func (p *ConfigMapOption) UpdateIfConfigMapChanged(ctx context.Context, newConfi
 		return err
 	}
 	if !reflect.DeepEqual(newConfigmap.Data, oldConfigmap.Data) {
-		p.logger.Info("configmap changed, update it", "name", newConfigmap.Name)
 		return p.UpdateConfigMap(ctx, newConfigmap.Namespace, newConfigmap)
 	}
 	return nil

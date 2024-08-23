@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -112,6 +112,41 @@ func TestPasswordValidate(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "12345$%^&*",
+			args: args{
+				pwd: "12345$%^&*",
+			},
+			wantErr: true,
+		},
+		{
+			name: "123admin==",
+			args: args{
+				pwd: "123admin==",
+			},
+			wantErr: false,
+		},
+		{
+			name: "123456789012345678901234567890123",
+			args: args{
+				pwd: "123456789012345678901234567890123",
+			},
+			wantErr: true,
+		},
+		{
+			name: "1234567",
+			args: args{
+				pwd: "1234567",
+			},
+			wantErr: true,
+		},
+		{
+			name: "admin123",
+			args: args{
+				pwd: "admin123",
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -121,3 +156,29 @@ func TestPasswordValidate(t *testing.T) {
 		})
 	}
 }
+
+/*
+	// example
+	err := validatePasswordComplexity("12345$%^&*")
+	if err == nil {
+		t.Error("Expected an error for password without a letter, but got nil")
+	}
+	err = validatePasswordComplexity("123admin==")
+	if err != nil {
+		t.Errorf("Expected no error for a valid password, but got: %v", err)
+	}
+	err = validatePasswordComplexity("123456789012345678901234567890123")
+	if err == nil {
+		t.Error("Expected an error for password length greater than 32, but got nil")
+	}
+	err = validatePasswordComplexity("1234567")
+	if err == nil {
+		t.Error("Expected an error for password length less than 8, but got nil")
+	}
+
+	err = validatePasswordComplexity("admin123")
+	if err == nil {
+		t.Error(err)
+		t.Error("Expected an error for password without a symbol, but got nil")
+	}
+*/

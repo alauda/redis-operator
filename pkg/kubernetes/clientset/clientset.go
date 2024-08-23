@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,7 +41,7 @@ type ClientSet interface {
 	ServiceMonitor
 
 	RedisFailover
-	RedisBackup
+	RedisSentinel
 	DistributedRedisCluster
 	Node
 	RedisUser
@@ -65,10 +65,8 @@ type clientSet struct {
 	StatefulSet
 	ServiceMonitor
 
-	RedisBackup
-	RedisClusterBackup
-
 	RedisFailover
+	RedisSentinel
 	DistributedRedisCluster
 	Node
 	RedisUser
@@ -104,9 +102,8 @@ func NewWithConfig(kubecli client.Client, restConfig *rest.Config, logger logr.L
 		ServiceAccount:      NewServiceAccount(kubecli, logger),
 		StatefulSet:         NewStatefulSet(kubecli, logger),
 
-		RedisBackup:             NewRedisBackup(kubecli, logger),
 		RedisFailover:           NewRedisFailoverService(kubecli, logger),
-		RedisClusterBackup:      NewRedisClusterBackup(kubecli, logger),
+		RedisSentinel:           NewRedisSentinelService(kubecli, logger),
 		DistributedRedisCluster: NewDistributedRedisCluster(kubecli, logger),
 		Node:                    NewNode(kubecli, logger),
 		ServiceMonitor:          NewServiceMonitor(kubecli, logger),

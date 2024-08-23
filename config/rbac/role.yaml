@@ -8,17 +8,13 @@ rules:
   - '*'
   resources:
   - configmaps
-  - configmaps/finalizers
   - endpoints
-  - persistentvolumeclaims
-  - persistentvolumeclaims/finalizers
   - pods
   - pods/exec
-  - secrets
-  - secrets/finalizers
   - services
   - services/finalizers
   verbs:
+  - '*'
   - create
   - delete
   - deletecollection
@@ -30,14 +26,20 @@ rules:
 - apiGroups:
   - '*'
   resources:
-  - configmaps
-  - endpoints
-  - pods
-  - pods/exec
-  - services
-  - services/finalizers
+  - configmaps/finalizers
+  - persistentvolumeclaims
+  - persistentvolumeclaims/finalizers
+  - secrets
+  - secrets/finalizers
   verbs:
-  - '*'
+  - create
+  - delete
+  - deletecollection
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - '*'
   resources:
@@ -138,11 +140,73 @@ rules:
   - update
   - watch
 - apiGroups:
+  - databases.spotahome.com
+  resources:
+  - redisfailovers
+  - redissentinels
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - databases.spotahome.com
+  resources:
+  - redisfailovers/finalizers
+  - redissentinels/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - databases.spotahome.com
+  resources:
+  - redisfailovers/status
+  - redissentinels/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - middleware.alauda.io
+  resources:
+  - imageversions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - middleware.alauda.io
   resources:
   - redis
   verbs:
   - '*'
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - middleware.alauda.io
+  resources:
+  - redis/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - middleware.alauda.io
+  resources:
+  - redis/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - policy
   resources:
@@ -174,12 +238,6 @@ rules:
 - apiGroups:
   - redis.kun
   resources:
-  - '*'
-  verbs:
-  - '*'
-- apiGroups:
-  - redis.kun
-  resources:
   - distributedredisclusters
   verbs:
   - create
@@ -204,63 +262,12 @@ rules:
   - patch
   - update
 - apiGroups:
+  - redis.kun
   - redis.middleware.alauda.io
   resources:
   - '*'
   verbs:
   - '*'
-- apiGroups:
-  - redis.middleware.alauda.io
-  resources:
-  - redisbackups
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - redis.middleware.alauda.io
-  resources:
-  - redisbackups/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - redis.middleware.alauda.io
-  resources:
-  - redisbackups/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - redis.middleware.alauda.io
-  resources:
-  - redisclusterbackups
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - redis.middleware.alauda.io
-  resources:
-  - redisclusterbackups/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - redis.middleware.alauda.io
-  resources:
-  - redisclusterbackups/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - redis.middleware.alauda.io
   resources:

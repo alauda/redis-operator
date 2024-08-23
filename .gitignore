@@ -31,3 +31,4 @@ bin/
 coverage.txt
 bundle/*
 bundle.Dockerfile
+golangci-lint-report.xml

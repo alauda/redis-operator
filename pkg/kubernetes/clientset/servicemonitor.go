@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,17 +20,17 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	v1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	monitoring "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ServiceMonitor interface {
-	GetServiceMonitor(ctx context.Context, namespace string, name string) (*v1.ServiceMonitor, error)
-	CreateServiceMonitor(ctx context.Context, namespace string, sm *v1.ServiceMonitor) error
-	CreateOrUpdateServiceMonitor(ctx context.Context, namespace string, sm *v1.ServiceMonitor) error
-	UpdateServiceMonitor(ctx context.Context, namespace string, sm *v1.ServiceMonitor) error
+	GetServiceMonitor(ctx context.Context, namespace string, name string) (*monitoring.ServiceMonitor, error)
+	CreateServiceMonitor(ctx context.Context, namespace string, sm *monitoring.ServiceMonitor) error
+	CreateOrUpdateServiceMonitor(ctx context.Context, namespace string, sm *monitoring.ServiceMonitor) error
+	UpdateServiceMonitor(ctx context.Context, namespace string, sm *monitoring.ServiceMonitor) error
 }
 
 type ServiceMonitorOption struct {
@@ -46,8 +46,8 @@ func NewServiceMonitor(kubeClient client.Client, logger logr.Logger) ServiceMoni
 	}
 }
 
-func (s *ServiceMonitorOption) GetServiceMonitor(ctx context.Context, namespace string, name string) (*v1.ServiceMonitor, error) {
-	sm := &v1.ServiceMonitor{}
+func (s *ServiceMonitorOption) GetServiceMonitor(ctx context.Context, namespace string, name string) (*monitoring.ServiceMonitor, error) {
+	sm := &monitoring.ServiceMonitor{}
 	err := s.client.Get(ctx, types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
@@ -59,17 +59,17 @@ func (s *ServiceMonitorOption) GetServiceMonitor(ctx context.Context, namespace 
 	return sm, err
 }
 
-func (s *ServiceMonitorOption) CreateServiceMonitor(ctx context.Context, namespace string, sm *v1.ServiceMonitor) error {
+func (s *ServiceMonitorOption) CreateServiceMonitor(ctx context.Context, namespace string, sm *monitoring.ServiceMonitor) error {
 	sm.Namespace = namespace
 	err := s.client.Create(ctx, sm)
 	if err != nil {
 		return err
 	}
-	s.logger.WithValues("namespace", namespace, "ServiceMonitor", sm.Name).Info("ServiceMonitor created")
+	s.logger.WithValues("namespace", namespace, "ServiceMonitor", sm.Name).V(3).Info("ServiceMonitor created")
 	return nil
 }
 
-func (s *ServiceMonitorOption) CreateOrUpdateServiceMonitor(ctx context.Context, namespace string, sm *v1.ServiceMonitor) error {
+func (s *ServiceMonitorOption) CreateOrUpdateServiceMonitor(ctx context.Context, namespace string, sm *monitoring.ServiceMonitor) error {
 	storedSm, err := s.GetServiceMonitor(ctx, namespace, sm.Name)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -82,12 +82,12 @@ func (s *ServiceMonitorOption) CreateOrUpdateServiceMonitor(ctx context.Context,
 	return s.UpdateServiceMonitor(ctx, namespace, sm)
 }
 
-func (s *ServiceMonitorOption) UpdateServiceMonitor(ctx context.Context, namespace string, sm *v1.ServiceMonitor) error {
+func (s *ServiceMonitorOption) UpdateServiceMonitor(ctx context.Context, namespace string, sm *monitoring.ServiceMonitor) error {
 	sm.Namespace = namespace
 	err := s.client.Update(ctx, sm)
 	if err != nil {
 		return err
 	}
-	s.logger.WithValues("namespace", namespace, "ServiceMonitor", sm.Name).Info("ServiceMonitor updated")
+	s.logger.WithValues("namespace", namespace, "ServiceMonitor", sm.Name).V(3).Info("ServiceMonitor updated")
 	return nil
 }

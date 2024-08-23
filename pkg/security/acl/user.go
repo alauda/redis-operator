@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -63,9 +63,9 @@ func LoadACLUsers(ctx context.Context, clientset kubernetes.ClientSet, cm *corev
 	return users, nil
 }
 
-func NewOperatorUser(ctx context.Context, clientset kubernetes.ClientSet, name, namespace string, ownerRefs []metav1.OwnerReference, ACL2Support bool) (*core.User, error) {
+func NewOperatorUser(ctx context.Context, clientset kubernetes.ClientSet, secretName, namespace string, ownerRefs []metav1.OwnerReference, ACL2Support bool) (*core.User, error) {
 	// get secret
-	oldSecret, _ := clientset.GetSecret(ctx, namespace, name)
+	oldSecret, _ := clientset.GetSecret(ctx, namespace, secretName)
 	if oldSecret != nil {
 		if data, ok := oldSecret.Data["password"]; ok && len(data) != 0 {
 			return core.NewOperatorUser(oldSecret, ACL2Support)
@@ -76,15 +76,16 @@ func NewOperatorUser(ctx context.Context, clientset kubernetes.ClientSet, name, 
 	if err != nil {
 		return nil, fmt.Errorf("generate password for operator user failed, error=%s", err)
 	}
+
 	secret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            name,
+			Name:            secretName,
 			Namespace:       namespace,
 			OwnerReferences: ownerRefs,
 		},
-		StringData: map[string]string{
-			"password": plainPasswd,
-			"username": user.DefaultOperatorUserName,
+		Data: map[string][]byte{
+			"password": []byte(plainPasswd),
+			"username": []byte(user.DefaultOperatorUserName),
 		},
 	}
 	if err := clientset.CreateIfNotExistsSecret(ctx, namespace, &secret); err != nil {
@@ -98,6 +99,10 @@ type Users []*core.User
 
 // GetByRole
 func (us Users) GetOpUser() *core.User {
+	if us == nil {
+		return nil
+	}
+
 	var commonUser *core.User
 	for _, u := range us {
 		if u.Role == core.RoleOperator {
@@ -120,11 +125,17 @@ func (us Users) GetDefaultUser() *core.User {
 }
 
 // Encode
-func (us Users) Encode() map[string]string {
+func (us Users) Encode(patch bool) map[string]string {
 	ret := map[string]string{}
-	for _, user := range us {
-		data, _ := json.Marshal(user)
-		ret[user.Name] = string(data)
+	for _, u := range us {
+		if len(u.Rules) == 0 {
+			u.Rules = append(u.Rules, &user.Rule{})
+		}
+		if patch {
+			u.Rules[0] = user.PatchRedisClusterClientRequiredRules(u.Rules[0])
+		}
+		data, _ := json.Marshal(u)
+		ret[u.Name] = string(data)
 	}
 	return ret
 }

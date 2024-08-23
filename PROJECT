@@ -7,7 +7,6 @@ layout:
 multigroup: true
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
-  scorecard.sdk.operatorframework.io/v2: {}
 projectName: redis-operator
 repo: github.com/alauda/redis-operator
 resources:
@@ -15,49 +14,50 @@ resources:
     crdVersion: v1
     namespaced: true
   controller: true
-  group: databases.spotahome.com
+  domain: spotahome.com
+  group: databases
   kind: RedisFailover
-  path: github.com/alauda/redis-operator/api/databases.spotahome.com/v1
-  plural: rf
+  path: github.com/alauda/redis-operator/api/databases/v1
   version: v1
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
-  group: redis.kun
+  domain: spotahome.com
+  group: databases
+  kind: RedisSentinel
+  path: github.com/alauda/redis-operator/api/databases/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: redis.kun
+  group: cluster
   kind: DistributedRedisCluster
-  path: github.com/alauda/redis-operator/api/redis.kun/v1alpha1
-  plural: drc
+  path: github.com/alauda/redis-operator/api/cluster/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: middleware.alauda.io
-  group: redis
-  kind: RedisBackup
-  path: github.com/alauda/redis-operator/api/redis/v1
-  plural: rb
+  domain: alauda.io
+  group: middleware
+  kind: Redis
+  path: github.com/alauda/redis-operator/api/middleware/v1
   version: v1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: middleware.alauda.io
-  group: redis
-  kind: RedisClusterBackup
-  path: github.com/alauda/redis-operator/api/redis/v1
-  plural: rcb
-  version: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: middleware.alauda.io
-  group: redis
+  domain: alauda.io
+  group: redis.middleware
   kind: RedisUser
-  path: github.com/alauda/redis-operator/api/redis/v1
-  plural: ru
+  path: github.com/alauda/redis-operator/api/middleware/redis/v1
   version: v1
   webhooks:
     defaulting: true

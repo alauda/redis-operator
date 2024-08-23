@@ -1,12 +1,6 @@
 apiVersion: redis.middleware.alauda.io/v1
 kind: RedisUser
 metadata:
-  name: rfr-acl-redissentinel-reader
+  name: redisuser-sample
 spec:
-  accountType: custom
-  aclRules: +@all -flushall -flushdb -keys -acl
-  arch: sentinel
-  passwordSecrets:
-  - redis-reader-v1u864
-  redisName: redissentinel
-  username: reader
+  # TODO(user): Add fields here

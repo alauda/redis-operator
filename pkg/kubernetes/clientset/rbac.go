@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -74,7 +74,7 @@ func (s *RBACOption) UpdateClusterRole(ctx context.Context, role *rbacv1.Cluster
 	if err != nil {
 		return err
 	}
-	s.logger.WithValues("ClusterRoleName", role.Name).Info("clusterRole updated")
+	s.logger.WithValues("ClusterRoleName", role.Name).V(3).Info("clusterRole updated")
 	return nil
 }
 
@@ -83,7 +83,7 @@ func (s *RBACOption) CreateClusterRole(ctx context.Context, role *rbacv1.Cluster
 	if err != nil {
 		return err
 	}
-	s.logger.WithValues("ClusterRoleName", role.Name).Info("clusterRole created")
+	s.logger.WithValues("ClusterRoleName", role.Name).V(3).Info("clusterRole created")
 	return nil
 }
 
@@ -125,7 +125,7 @@ func (s *RBACOption) CreateClusterRoleBinding(ctx context.Context, rb *rbacv1.Cl
 	if err != nil {
 		return err
 	}
-	s.logger.WithValues("ClusterRoleBindingName", rb.Name).Info("ClusterRoleBinding created")
+	s.logger.WithValues("ClusterRoleBindingName", rb.Name).V(3).Info("ClusterRoleBinding created")
 	return nil
 }
 
@@ -134,7 +134,7 @@ func (s *RBACOption) UpdateClusterRoleBinding(ctx context.Context, role *rbacv1.
 	if err != nil {
 		return err
 	}
-	s.logger.WithValues("ClusterRoleBindingName", role.Name).Info("clusterRoleBinding updated")
+	s.logger.WithValues("ClusterRoleBindingName", role.Name).V(3).Info("clusterRoleBinding updated")
 	return nil
 }
 
@@ -189,7 +189,7 @@ func (s *RBACOption) CreateRole(ctx context.Context, namespace string, role *rba
 	if err != nil {
 		return err
 	}
-	s.logger.WithValues("namespace", namespace, "roleName", role.Name).Info("role created")
+	s.logger.WithValues("namespace", namespace, "roleName", role.Name).V(3).Info("role created")
 	return nil
 }
 
@@ -198,7 +198,7 @@ func (s *RBACOption) UpdateRole(ctx context.Context, namespace string, role *rba
 	if err != nil {
 		return err
 	}
-	s.logger.WithValues("namespace", namespace, "roleName", role.Name).Info("role updated")
+	s.logger.WithValues("namespace", namespace, "roleName", role.Name).V(3).Info("role updated")
 	return nil
 }
 

@@ -1,37 +1,18 @@
 name: dev
 
-on:
-  push:
-    branch: [ "main" ]
-  pull_request:
+on: [pull_request]
 
 jobs:
-  check:
-    name: Golang Check
+  test:
+    name: Test with Coverage
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    - uses: actions/setup-go@v5
-      with:
-        go-version-file: go.mod
-        cache: false
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v3
-      with:
-        version: v1.54
-        args: --timeout=15m --tests=false --exclude-use-default
-  unit-test:
-    name: Unit Test
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v2
       with:
-        go-version-file: go.mod
-        cache: false
+        go-version: '1.22'
+    - name: Check out code
+      uses: actions/checkout@v2
     - name: Install dependencies
       run: |
         go mod download

@@ -3,22 +3,12 @@ REGISTRY ?= ghcr.io
 # GROUP defines the docker image group
 GROUP ?= alauda
 
-REDIS_IMAGE ?= redis
-REDIS_IMAGE_VERSION_6 ?= 6.0-alpine
-REDIS_IMAGE_VERSION_6_2 ?= 6.2-alpine
-REDIS_IMAGE_VERSION_7 ?= 7.0-alpine
-REDIS_IMAGE_VERSION_7_2 ?= 7.2-alpine
-REDIS_IMAGE_VERSION_DEFAULT ?= $(REDIS_IMAGE_VERSION_6)
-
-EXPORTER_IMAGE ?= oliver006/redis_exporter
-EXPORTER_VERSION ?= v1.55.0
-
 # VERSION defines the project version for the bundle.
 # Update this value when you upgrade the version of your project.
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= 1.0.0
+VERSION ?= 3.18.0
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -149,7 +139,7 @@ docker-push: ## Push docker image with the manager.
 # - have enable BuildKit, More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 # - be able to push the image for your registry (i.e. if you do not inform a valid value via IMG=<myregistry/image:<tag>> then the export will fail)
 # To properly provided solutions that supports more than one platform you should use this option.
-PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
+PLATFORMS ?= linux/arm64,linux/amd64
 .PHONY: docker-buildx
 docker-buildx: test ## Build and push docker image for the manager for cross-platform support
 	# copy existing Dockerfile and insert --platform=${BUILDPLATFORM} into Dockerfile.cross, and preserve the original Dockerfile
@@ -198,7 +188,7 @@ ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.0.1
-CONTROLLER_TOOLS_VERSION ?= v0.12.0
+CONTROLLER_TOOLS_VERSION ?= v0.16.0
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary. If wrong version is installed, it will be removed before downloading.
@@ -241,12 +231,6 @@ endif
 bundle: manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
 	@cd config/manager && $(KUSTOMIZE) edit set image redis-operator=$(IMG)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
-	@sed -i 's#__DEFAULT_REDIS_IMAGE__#$(REDIS_IMAGE):$(REDIS_IMAGE_VERSION_DEFAULT)#g' ./bundle/manifests/redis-operator.clusterserviceversion.yaml
-	@sed -i 's#__REDIS_VERSION_6_IMAGE__#$(REDIS_IMAGE):$(REDIS_IMAGE_VERSION_6)#g' ./bundle/manifests/redis-operator.clusterserviceversion.yaml
-	@sed -i 's#__REDIS_VERSION_6_2_IMAGE__#$(REDIS_IMAGE):$(REDIS_IMAGE_VERSION_6_2)#g' ./bundle/manifests/redis-operator.clusterserviceversion.yaml
-	@sed -i 's#__REDIS_VERSION_7_IMAGE__#$(REDIS_IMAGE):$(REDIS_IMAGE_VERSION_7)#g' ./bundle/manifests/redis-operator.clusterserviceversion.yaml
-	@sed -i 's#__REDIS_VERSION_7_2_IMAGE__#$(REDIS_IMAGE):$(REDIS_IMAGE_VERSION_7_2)#g' ./bundle/manifests/redis-operator.clusterserviceversion.yaml
-	@sed -i 's#__DEFAULT_EXPORTER_IMAGE__#$(EXPORTER_IMAGE):$(EXPORTER_VERSION)#g' ./bundle/manifests/redis-operator.clusterserviceversion.yaml
 	@sed -i 's#__CURRENT_VERSION__#$(VERSION)#g' ./bundle/manifests/redis-operator.clusterserviceversion.yaml
 	$(OPERATOR_SDK) bundle validate ./bundle
 

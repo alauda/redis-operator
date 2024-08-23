@@ -1,0 +1,9 @@
+apiVersion: middle.alauda.cn/v1alpha1
+kind: RedisProxy
+metadata:
+  name: redisproxy-sample
+spec:
+  proxyInfo:
+    architecture: cluster
+    instanceName: redisproxy-sample
+  image: __DEFAULT_PROXY_IMAGE__

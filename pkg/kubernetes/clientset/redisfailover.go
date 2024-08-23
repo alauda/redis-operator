@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,22 +18,26 @@ package clientset
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	redisfailoverv1 "github.com/alauda/redis-operator/api/databases.spotahome.com/v1"
+	databasesv1 "github.com/alauda/redis-operator/api/databases/v1"
 )
 
 // RedisFailover the RF service that knows how to interact with k8s to get them
 type RedisFailover interface {
 	// ListRedisFailovers lists the redisfailovers on a cluster.
-	ListRedisFailovers(ctx context.Context, namespace string, opts client.ListOptions) (*redisfailoverv1.RedisFailoverList, error)
+	ListRedisFailovers(ctx context.Context, namespace string, opts client.ListOptions) (*databasesv1.RedisFailoverList, error)
 	// GetRedisFailover get the redisfailover on a cluster.
-	GetRedisFailover(ctx context.Context, namespace, name string) (*redisfailoverv1.RedisFailover, error)
+	GetRedisFailover(ctx context.Context, namespace, name string) (*databasesv1.RedisFailover, error)
 	// UpdateRedisFailover update the redisfailover on a cluster.
-	UpdateRedisFailover(ctx context.Context, rf *redisfailoverv1.RedisFailover) error
+	UpdateRedisFailover(ctx context.Context, inst *databasesv1.RedisFailover) error
+	// UpdateRedisFailoverStatus
+	UpdateRedisFailoverStatus(ctx context.Context, inst *databasesv1.RedisFailover) error
 }
 
 // RedisFailoverService is the RedisFailover service implementation using API calls to kubernetes.
@@ -44,7 +48,7 @@ type RedisFailoverService struct {
 
 // NewRedisFailoverService returns a new Workspace KubeService.
 func NewRedisFailoverService(client client.Client, logger logr.Logger) *RedisFailoverService {
-	logger = logger.WithName("k8s.redisfailover")
+	logger = logger.WithName("RedisFailover")
 
 	return &RedisFailoverService{
 		client: client,
@@ -53,8 +57,8 @@ func NewRedisFailoverService(client client.Client, logger logr.Logger) *RedisFai
 }
 
 // ListRedisFailovers satisfies redisfailover.Service interface.
-func (r *RedisFailoverService) ListRedisFailovers(ctx context.Context, namespace string, opts client.ListOptions) (*redisfailoverv1.RedisFailoverList, error) {
-	ret := redisfailoverv1.RedisFailoverList{}
+func (r *RedisFailoverService) ListRedisFailovers(ctx context.Context, namespace string, opts client.ListOptions) (*databasesv1.RedisFailoverList, error) {
+	ret := databasesv1.RedisFailoverList{}
 	err := r.client.List(ctx, &ret, &opts)
 	if err != nil {
 		return nil, err
@@ -63,8 +67,8 @@ func (r *RedisFailoverService) ListRedisFailovers(ctx context.Context, namespace
 }
 
 // GetRedisFailover satisfies redisfailover.Service interface.
-func (r *RedisFailoverService) GetRedisFailover(ctx context.Context, namespace, name string) (*redisfailoverv1.RedisFailover, error) {
-	ret := redisfailoverv1.RedisFailover{}
+func (r *RedisFailoverService) GetRedisFailover(ctx context.Context, namespace, name string) (*databasesv1.RedisFailover, error) {
+	ret := databasesv1.RedisFailover{}
 	err := r.client.Get(ctx, types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
@@ -76,31 +80,35 @@ func (r *RedisFailoverService) GetRedisFailover(ctx context.Context, namespace, 
 }
 
 // UpdateRedisFailover
-func (r *RedisFailoverService) UpdateRedisFailover(ctx context.Context, n *redisfailoverv1.RedisFailover) error {
-	o := redisfailoverv1.RedisFailover{}
-	err := r.client.Get(ctx, types.NamespacedName{
-		Name:      n.Name,
-		Namespace: n.Namespace,
-	}, &o)
-	if err != nil {
-		return err
-	}
+func (r *RedisFailoverService) UpdateRedisFailover(ctx context.Context, inst *databasesv1.RedisFailover) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var oldInst databasesv1.RedisFailover
+		if err := r.client.Get(ctx, client.ObjectKeyFromObject(inst), &oldInst); err != nil {
+			r.logger.Error(err, "get RedisFailover failed")
+			return err
+		}
+		inst.ResourceVersion = oldInst.ResourceVersion
+		return r.client.Update(ctx, inst)
+	})
+}
 
-	o.Spec = n.Spec
-	o.Status = n.Status
-	if err := r.client.Update(ctx, &o); err != nil {
-		r.logger.Error(err, "update redis failover failed")
-		return err
-	}
-	if err := r.client.Status().Update(ctx, &o); err != nil {
-		r.logger.Error(err, "update redis failover status failed")
-		return err
-	}
-	return err
+func (r *RedisFailoverService) UpdateRedisFailoverStatus(ctx context.Context, inst *databasesv1.RedisFailover) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var oldInst databasesv1.RedisFailover
+		if err := r.client.Get(ctx, client.ObjectKeyFromObject(inst), &oldInst); err != nil {
+			r.logger.Error(err, "get RedisFailover failed")
+			return err
+		}
+		if !reflect.DeepEqual(oldInst.Status, inst.Status) {
+			inst.ResourceVersion = oldInst.ResourceVersion
+			return r.client.Status().Update(ctx, inst)
+		}
+		return nil
+	})
 }
 
 func (r *RedisFailoverService) DeleteRedisFailover(ctx context.Context, namespace string, name string) error {
-	ret := redisfailoverv1.RedisFailover{}
+	ret := databasesv1.RedisFailover{}
 	if err := r.client.Get(ctx, types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,

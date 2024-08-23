@@ -1,0 +1,12 @@
+apiVersion: redis.middleware.alauda.io/v1alpha1
+kind: ActiveRedisConnection
+metadata:
+  labels:
+    app.kubernetes.io/name: activeredisconnection
+    app.kubernetes.io/instance: activeredisconnection-sample
+    app.kubernetes.io/part-of: redis-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: redis-operator
+  name: activeredisconnection-sample
+spec:
+  # TODO(user): Add fields here

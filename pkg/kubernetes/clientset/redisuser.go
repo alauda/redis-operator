@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,28 +19,27 @@ package clientset
 import (
 	"context"
 
+	redisv1 "github.com/alauda/redis-operator/api/middleware/redis/v1"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	redismiddlewarealaudaiov1 "github.com/alauda/redis-operator/api/redis/v1"
 )
 
 type RedisUser interface {
 	// ListRedisUsers lists the redisusers on a cluster.
-	ListRedisUsers(ctx context.Context, namespace string, opts client.ListOptions) (*redismiddlewarealaudaiov1.RedisUserList, error)
+	ListRedisUsers(ctx context.Context, namespace string, opts client.ListOptions) (*redisv1.RedisUserList, error)
 	// GetRedisUser get the redisuser on a cluster.
-	GetRedisUser(ctx context.Context, namespace, name string) (*redismiddlewarealaudaiov1.RedisUser, error)
+	GetRedisUser(ctx context.Context, namespace, name string) (*redisv1.RedisUser, error)
 	// UpdateRedisUser update the redisuser on a cluster.
-	UpdateRedisUser(ctx context.Context, ru *redismiddlewarealaudaiov1.RedisUser) error
+	UpdateRedisUser(ctx context.Context, ru *redisv1.RedisUser) error
 	// Create
-	CreateRedisUser(ctx context.Context, ru *redismiddlewarealaudaiov1.RedisUser) error
+	CreateRedisUser(ctx context.Context, ru *redisv1.RedisUser) error
 	//create if not exites
-	CreateIfNotExistsRedisUser(ctx context.Context, ru *redismiddlewarealaudaiov1.RedisUser) error
+	CreateIfNotExistsRedisUser(ctx context.Context, ru *redisv1.RedisUser) error
 
 	//create or update
-	CreateOrUpdateRedisUser(ctx context.Context, ru *redismiddlewarealaudaiov1.RedisUser) error
+	CreateOrUpdateRedisUser(ctx context.Context, ru *redisv1.RedisUser) error
 }
 
 type RedisUserOption struct {
@@ -56,8 +55,8 @@ func NewRedisUserService(client client.Client, logger logr.Logger) *RedisUserOpt
 	}
 }
 
-func (r *RedisUserOption) ListRedisUsers(ctx context.Context, namespace string, opts client.ListOptions) (*redismiddlewarealaudaiov1.RedisUserList, error) {
-	ret := redismiddlewarealaudaiov1.RedisUserList{}
+func (r *RedisUserOption) ListRedisUsers(ctx context.Context, namespace string, opts client.ListOptions) (*redisv1.RedisUserList, error) {
+	ret := redisv1.RedisUserList{}
 	err := r.client.List(ctx, &ret, &opts)
 	if err != nil {
 		return nil, err
@@ -65,8 +64,8 @@ func (r *RedisUserOption) ListRedisUsers(ctx context.Context, namespace string, 
 	return &ret, nil
 }
 
-func (r *RedisUserOption) GetRedisUser(ctx context.Context, namespace, name string) (*redismiddlewarealaudaiov1.RedisUser, error) {
-	ret := redismiddlewarealaudaiov1.RedisUser{}
+func (r *RedisUserOption) GetRedisUser(ctx context.Context, namespace, name string) (*redisv1.RedisUser, error) {
+	ret := redisv1.RedisUser{}
 	err := r.client.Get(ctx, types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
@@ -77,8 +76,8 @@ func (r *RedisUserOption) GetRedisUser(ctx context.Context, namespace, name stri
 	return &ret, nil
 }
 
-func (r *RedisUserOption) UpdateRedisUser(ctx context.Context, ru *redismiddlewarealaudaiov1.RedisUser) error {
-	o := redismiddlewarealaudaiov1.RedisUser{}
+func (r *RedisUserOption) UpdateRedisUser(ctx context.Context, ru *redisv1.RedisUser) error {
+	o := redisv1.RedisUser{}
 	err := r.client.Get(ctx, types.NamespacedName{
 		Name:      ru.Name,
 		Namespace: ru.Namespace,
@@ -86,7 +85,8 @@ func (r *RedisUserOption) UpdateRedisUser(ctx context.Context, ru *redismiddlewa
 	if err != nil {
 		return err
 	}
-
+	o.Annotations = ru.Annotations
+	o.Labels = ru.Labels
 	o.Spec = ru.Spec
 	o.Status = ru.Status
 	if err := r.client.Update(ctx, &o); err != nil {
@@ -101,7 +101,7 @@ func (r *RedisUserOption) UpdateRedisUser(ctx context.Context, ru *redismiddlewa
 }
 
 func (r *RedisUserOption) DeleteRedisUser(ctx context.Context, namespace string, name string) error {
-	ret := redismiddlewarealaudaiov1.RedisUser{}
+	ret := redisv1.RedisUser{}
 	if err := r.client.Get(ctx, types.NamespacedName{
 		Name:      name,
 		Namespace: namespace,
@@ -114,14 +114,14 @@ func (r *RedisUserOption) DeleteRedisUser(ctx context.Context, namespace string,
 	return nil
 }
 
-func (r *RedisUserOption) CreateRedisUser(ctx context.Context, ru *redismiddlewarealaudaiov1.RedisUser) error {
+func (r *RedisUserOption) CreateRedisUser(ctx context.Context, ru *redisv1.RedisUser) error {
 	if err := r.client.Create(ctx, ru); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *RedisUserOption) CreateIfNotExistsRedisUser(ctx context.Context, ru *redismiddlewarealaudaiov1.RedisUser) error {
+func (r *RedisUserOption) CreateIfNotExistsRedisUser(ctx context.Context, ru *redisv1.RedisUser) error {
 	if _, err := r.GetRedisUser(ctx, ru.Namespace, ru.Name); err != nil {
 		if errors.IsNotFound(err) {
 			return r.CreateRedisUser(ctx, ru)
@@ -131,7 +131,7 @@ func (r *RedisUserOption) CreateIfNotExistsRedisUser(ctx context.Context, ru *re
 	return nil
 }
 
-func (r *RedisUserOption) CreateOrUpdateRedisUser(ctx context.Context, ru *redismiddlewarealaudaiov1.RedisUser) error {
+func (r *RedisUserOption) CreateOrUpdateRedisUser(ctx context.Context, ru *redisv1.RedisUser) error {
 	if oldRu, err := r.GetRedisUser(ctx, ru.Namespace, ru.Name); err != nil {
 		if errors.IsNotFound(err) {
 			return r.CreateRedisUser(ctx, ru)

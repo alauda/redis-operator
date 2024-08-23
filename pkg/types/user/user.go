@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,6 @@ limitations under the License.
 package user
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -35,74 +34,6 @@ const (
 	PasswordSecretKey = "password"
 )
 
-// Rule acl rules
-//
-// This rule supports redis 7.0, which is compatable with 6.0
-type Rule struct {
-	// Categories
-	Categories           []string `json:"categories,omitempty"`
-	DisallowedCategories []string `json:"disallowedCategories,omitempty"`
-	// AllowedCommands supports <command> and <command>|<subcommand>
-	AllowedCommands []string `json:"allowedCommands,omitempty"`
-	// DisallowedCommands supports <command> and <command>|<subcommand>
-	DisallowedCommands []string `json:"disallowedCommands,omitempty"`
-	// KeyPatterns support multi patterns, for 7.0 support %R~ and %W~ patterns
-	KeyPatterns []string `json:"keyPatterns,omitempty"`
-	Channels    []string `json:"channels,omitempty"`
-}
-
-func (r *Rule) Validate() error {
-	if r == nil {
-		return errors.New("nil rule")
-	}
-	if len(r.Categories) == 0 && len(r.AllowedCommands) == 0 {
-		return errors.New("invalid rule, no allowed command")
-	}
-	if len(r.KeyPatterns) == 0 {
-		return errors.New("invalid rule, no key pattern")
-	}
-	return nil
-}
-
-func (r *Rule) String() string {
-	return strings.Join(append(append(append(append([]string{}, r.Categories...),
-		r.AllowedCommands...), r.DisallowedCommands...), r.KeyPatterns...), " ")
-}
-
-func (r *Rule) Parse(ruleString string) error {
-	if r == nil {
-		r = &Rule{}
-	}
-	if ruleString == "" {
-		return nil
-	}
-	for _, v := range strings.Split(ruleString, " ") {
-		if v == "" {
-			continue
-		}
-		if strings.HasPrefix(v, "+@") {
-			r.Categories = append(r.Categories, strings.TrimPrefix(v, "+@"))
-		} else if strings.HasPrefix(v, "-@") {
-			r.DisallowedCategories = append(r.DisallowedCategories, strings.TrimPrefix(v, "-@"))
-		} else if strings.HasPrefix(v, "-") {
-			r.DisallowedCommands = append(r.DisallowedCommands, strings.TrimPrefix(v, "-"))
-		} else if strings.HasPrefix(v, "+") {
-			r.AllowedCommands = append(r.AllowedCommands, strings.TrimPrefix(v, "+"))
-		} else if strings.HasPrefix(v, "~") {
-			r.KeyPatterns = append(r.KeyPatterns, strings.TrimPrefix(v, "~"))
-		} else if strings.HasPrefix(v, "&") {
-			r.Channels = append(r.Channels, strings.TrimPrefix(v, "&"))
-		} else if v == "allkeys" {
-			r.KeyPatterns = append(r.KeyPatterns, "*")
-		} else if v == "resetkeys" {
-			r.KeyPatterns = append(r.KeyPatterns, "*")
-		} else {
-			return fmt.Errorf("invalid rule string %s", v)
-		}
-	}
-	return nil
-}
-
 // UserRole
 type UserRole string
 
@@ -112,9 +43,9 @@ const (
 )
 
 // NewOperatorUser
-func NewOperatorUser(secret *v1.Secret, ACL2Support bool) (*User, error) {
+func NewOperatorUser(secret *v1.Secret, acl2Support bool) (*User, error) {
 	rule := Rule{Categories: []string{"all"}, DisallowedCommands: []string{"keys"}, KeyPatterns: []string{"*"}}
-	if ACL2Support {
+	if acl2Support {
 		rule.Channels = []string{"*"}
 	}
 	user := User{
@@ -135,7 +66,7 @@ func NewOperatorUser(secret *v1.Secret, ACL2Support bool) (*User, error) {
 }
 
 // NewUser
-func NewUser(name string, role UserRole, secret *v1.Secret) (*User, error) {
+func NewUser(name string, role UserRole, secret *v1.Secret, acl2Support bool) (*User, error) {
 	var (
 		err    error
 		passwd *Password
@@ -146,13 +77,20 @@ func NewUser(name string, role UserRole, secret *v1.Secret) (*User, error) {
 		}
 	}
 	Rules := []*Rule{{Categories: []string{"all"}, KeyPatterns: []string{"*"}}}
-	if name == "" {
+	if name == "" || name == DefaultUserName {
 		name = DefaultUserName
-		Rules = []*Rule{{Categories: []string{"all"},
-			KeyPatterns:          []string{"*"},
-			DisallowedCategories: []string{"dangerous"},
-			DisallowedCommands:   []string{"acl"}}}
+		Rules = []*Rule{
+			{
+				Categories:         []string{"all"},
+				KeyPatterns:        []string{"*"},
+				DisallowedCommands: []string{"acl", "flushall", "flushdb", "keys"},
+			},
+		}
 	}
+	if acl2Support {
+		Rules[0].Channels = []string{"*"}
+	}
+
 	user := &User{
 		Name:     name,
 		Role:     role,
@@ -165,21 +103,48 @@ func NewUser(name string, role UserRole, secret *v1.Secret) (*User, error) {
 	return user, nil
 }
 
-func NewUserFromRedisUser(username, ruleStr string, password_obj *Password) (*User, error) {
-	rule := Rule{}
+// NewSentinelUser
+func NewSentinelUser(name string, role UserRole, secret *v1.Secret) (*User, error) {
+	var (
+		err    error
+		passwd *Password
+	)
+	if secret != nil {
+		if passwd, err = NewPassword(secret); err != nil {
+			return nil, err
+		}
+	}
+
+	user := &User{
+		Name:     name,
+		Role:     role,
+		Password: passwd,
+	}
+	if err := user.Validate(); err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func NewUserFromRedisUser(username, ruleStr string, pwd *Password) (*User, error) {
 	rules := []*Rule{}
 	if ruleStr != "" {
-		err := rule.Parse(ruleStr)
+		rule, err := NewRule(ruleStr)
 		if err != nil {
 			return nil, err
 		}
-		rules = append(rules, &rule)
+		rules = append(rules, rule)
+	}
+	role := RoleDeveloper
+	if username == DefaultOperatorUserName {
+		role = RoleOperator
 	}
 
-	user := User{Name: username,
-		Role:     RoleDeveloper,
+	user := User{
+		Name:     username,
+		Role:     role,
 		Rules:    rules,
-		Password: password_obj,
+		Password: pwd,
 	}
 	return &user, nil
 
@@ -209,11 +174,6 @@ func (u *User) AppendRule(rules ...*Rule) error {
 	if u == nil {
 		return nil
 	}
-	for _, rule := range rules {
-		if err := rule.Validate(); err != nil {
-			return err
-		}
-	}
 	u.Rules = append(u.Rules, rules...)
 	return nil
 }
@@ -240,7 +200,7 @@ func (u *User) String() string {
 
 	vals := []string{u.Name, string(u.Role)}
 	for _, rule := range u.Rules {
-		vals = append(vals, rule.String())
+		vals = append(vals, rule.Encode())
 	}
 	return strings.Join(vals, " ")
 }

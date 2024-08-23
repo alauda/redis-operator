@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/alauda/redis-operator/api/core"
 )
 
 var (
@@ -30,8 +31,10 @@ var (
 	MinACL2SupportedVersion, _ = semver.NewVersion("7.0-AAA")
 
 	_Redis5Version, _ = semver.NewVersion("5.0-AAA")
-	// _Redis6Version, _ = semver.NewVersion("6.0-AAA")
+	_Redis6Version, _ = semver.NewVersion("6.0-AAA")
 	_Redis7Version, _ = semver.NewVersion("7.0-AAA")
+
+	_ = _Redis6Version
 )
 
 // RedisVersion
@@ -41,21 +44,24 @@ const (
 	// RedisVersionUnknown
 	RedisVersionUnknown RedisVersion = ""
 	// RedisVersion4
-	RedisVersion4 = "4.0"
+	RedisVersion4 RedisVersion = "4.0"
 	// RedisVersion5
-	RedisVersion5 = "5.0"
-	// RedisVersion6
-	//
-	// Supports ACL, io-threads
-	RedisVersion6 = "6.0"
+	RedisVersion5 RedisVersion = "5.0"
+	// RedisVersion6, Supports ACL, io-threads
+	RedisVersion6 RedisVersion = "6.0"
 	// RedisVersion6_2
-	RedisVersion6_2 = "6.2"
-
-	// Supports ACL2, Function
+	RedisVersion6_2 RedisVersion = "6.2"
 	// RedisVersion7
-	RedisVersion7   = "7.0"
-	RedisVersion7_2 = "7.2"
+	RedisVersion7 RedisVersion = "7.0"
+	// Supports ACL2, Function
+	RedisVersion7_2 RedisVersion = "7.2"
+	// Supports modules
+	ActiveRedisVersion6 RedisVersion = "6.0"
 )
+
+func (v RedisVersion) String() string {
+	return string(v)
+}
 
 func (v RedisVersion) IsTLSSupported() bool {
 	ver, err := semver.NewVersion(string(v))
@@ -81,6 +87,14 @@ func (v RedisVersion) IsACL2Supported() bool {
 	return ver.Compare(MinACL2SupportedVersion) >= 0
 }
 
+func (v RedisVersion) IsClusterShardSupported() bool {
+	ver, err := semver.NewVersion(string(v))
+	if err != nil {
+		return false
+	}
+	return ver.Compare(_Redis7Version) >= 0
+}
+
 func (v RedisVersion) CustomConfigs(arch RedisArch) map[string]string {
 	if v == RedisVersionUnknown {
 		return nil
@@ -95,7 +109,7 @@ func (v RedisVersion) CustomConfigs(arch RedisArch) map[string]string {
 	if ver.Compare(_Redis5Version) >= 0 {
 		ret["ignore-warnings"] = "ARM64-COW-BUG"
 	}
-	if arch == ClusterArch {
+	if arch == core.RedisCluster {
 		switch {
 		case ver.Compare(_Redis7Version) >= 0:
 			ret["cluster-allow-replica-migration"] = "no"

@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -61,21 +61,17 @@ func (c *CertOption) CreateCertificate(ctx context.Context, namespace string, ce
 	if err != nil {
 		return err
 	}
-	c.logger.WithValues("namespace", namespace, "cert", cert.Name).Info("cert created")
+	c.logger.WithValues("namespace", namespace, "cert", cert.Name).V(3).Info("cert created")
 	return err
 
 }
 
 func (c *CertOption) CreateIfNotExistsCertificate(ctx context.Context, namespace string, cert *certv1.Certificate) error {
-	err := c.client.Get(ctx, types.NamespacedName{
-		Name:      cert.Name,
-		Namespace: cert.Namespace,
-	}, cert)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			err = c.CreateCertificate(ctx, namespace, cert)
-			return err
-		}
+	err := c.client.Get(ctx, types.NamespacedName{Name: cert.Name, Namespace: cert.Namespace}, cert)
+	if errors.IsNotFound(err) {
+		err = c.CreateCertificate(ctx, namespace, cert)
+		return err
+	} else if err != nil {
 		return err
 	}
 	return nil

@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 
 	"github.com/go-logr/logr"
 
@@ -48,6 +49,7 @@ type Service interface {
 	ListServices(ctx context.Context, namespace string) (*corev1.ServiceList, error)
 	GetServiceByLabels(ctx context.Context, namespace string, labelsMap map[string]string) (*corev1.ServiceList, error)
 	UpdateIfSelectorChangedService(ctx context.Context, namespace string, service *corev1.Service) error
+	CreateOrUpdateIfServiceChanged(ctx context.Context, namespace string, service *corev1.Service) error
 }
 
 // ServiceOption is the service client implementation using API calls to kubernetes.
@@ -102,7 +104,7 @@ func (s *ServiceOption) CreateService(ctx context.Context, namespace string, ser
 	if err != nil {
 		return err
 	}
-	s.logger.WithValues("namespace", namespace, "serviceName", service.Name).Info("service created")
+	s.logger.WithValues("namespace", namespace, "serviceName", service.Name).V(3).Info("service created")
 	return nil
 }
 
@@ -118,16 +120,31 @@ func (s *ServiceOption) CreateIfNotExistsService(ctx context.Context, namespace 
 	return nil
 }
 
-func (s *ServiceOption) UpdateIfSelectorChangedService(ctx context.Context, namespace string, service *corev1.Service) error {
-	old_service, err := s.GetService(ctx, namespace, service.Name)
-	if err != nil {
-		// If no resource we need to create.
-		if errors.IsNotFound(err) {
-			return s.CreateService(ctx, namespace, service)
-		}
+// CreateOrUpdateIfServiceChanged implement the Service.Interface
+func (s *ServiceOption) CreateOrUpdateIfServiceChanged(ctx context.Context, namespace string, service *corev1.Service) error {
+	oldSvc, err := s.GetService(ctx, namespace, service.Name)
+	if errors.IsNotFound(err) {
+		return s.CreateService(ctx, namespace, service)
+	} else if err != nil {
 		return err
 	}
-	if !reflect.DeepEqual(old_service.Spec.Selector, service.Spec.Selector) {
+	if !reflect.DeepEqual(oldSvc.Labels, service.Labels) ||
+		!reflect.DeepEqual(oldSvc.Spec.Selector, service.Spec.Selector) ||
+		len(oldSvc.Spec.Ports) != len(service.Spec.Ports) {
+
+		return s.UpdateService(ctx, namespace, service)
+	}
+	return nil
+}
+
+func (s *ServiceOption) UpdateIfSelectorChangedService(ctx context.Context, namespace string, service *corev1.Service) error {
+	oldSvc, err := s.GetService(ctx, namespace, service.Name)
+	if errors.IsNotFound(err) {
+		return s.CreateService(ctx, namespace, service)
+	} else if err != nil {
+		return err
+	}
+	if !reflect.DeepEqual(oldSvc.Spec.Selector, service.Spec.Selector) {
 		return s.UpdateService(ctx, namespace, service)
 	}
 	return nil
@@ -135,30 +152,27 @@ func (s *ServiceOption) UpdateIfSelectorChangedService(ctx context.Context, name
 
 // UpdateService implement the Service.Interface
 func (s *ServiceOption) UpdateService(ctx context.Context, namespace string, service *corev1.Service) error {
-	err := s.client.Update(ctx, service)
-	if err != nil {
-		return err
-	}
-	s.logger.WithValues("namespace", namespace, "serviceName", service.Name).Info("service updated")
-	return nil
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		oldSvc, err := s.GetService(ctx, namespace, service.Name)
+		if errors.IsNotFound(err) {
+			return nil
+		} else if err != nil {
+			return err
+		}
+		service.ResourceVersion = oldSvc.ResourceVersion
+		return s.client.Update(ctx, service)
+	})
 }
 
 // CreateOrUpdateService implement the Service.Interface
 func (s *ServiceOption) CreateOrUpdateService(ctx context.Context, namespace string, service *corev1.Service) error {
-	storedService, err := s.GetService(ctx, namespace, service.Name)
-	if err != nil {
-		// If no resource we need to create.
-		if errors.IsNotFound(err) {
-			return s.CreateService(ctx, namespace, service)
-		}
+	oldSvc, err := s.GetService(ctx, namespace, service.Name)
+	if errors.IsNotFound(err) {
+		return s.CreateService(ctx, namespace, service)
+	} else if err != nil {
 		return err
 	}
-
-	// Already exists, need to Update.
-	// Set the correct resource version to ensure we are on the latest version. This way the only valid
-	// namespace is our spec(https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#concurrency-control-and-consistency),
-	// we will replace the current namespace state.
-	service.ResourceVersion = storedService.ResourceVersion
+	service.ResourceVersion = oldSvc.ResourceVersion
 	return s.UpdateService(ctx, namespace, service)
 }
 
@@ -171,7 +185,10 @@ func (s *ServiceOption) DeleteService(ctx context.Context, namespace string, nam
 	}, service); err != nil {
 		return err
 	}
-	return s.client.Delete(ctx, service)
+
+	err := s.client.Delete(ctx, service)
+	s.logger.WithValues("namespace", namespace, "serviceName", service.Name).V(3).Info("service deleted")
+	return err
 }
 
 // ListServices implement the Service.Interface

@@ -1,0 +1,23 @@
+# permissions for end users to view redissentinels.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: redis-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: databases-redissentinel-viewer-role
+rules:
+- apiGroups:
+  - databases
+  resources:
+  - redissentinels
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - databases
+  resources:
+  - redissentinels/status
+  verbs:
+  - get

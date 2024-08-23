@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -45,7 +44,7 @@ type StatefulSet interface {
 	// CreateOrUpdateStatefulSet will update the given StatefulSet or create it if does not exist
 	CreateOrUpdateStatefulSet(ctx context.Context, namespace string, StatefulSet *appsv1.StatefulSet) error
 	// DeleteStatefulSet will delete the given StatefulSet
-	DeleteStatefulSet(ctx context.Context, namespace string, name string, force ...bool) error
+	DeleteStatefulSet(ctx context.Context, namespace string, name string, opts ...client.DeleteOption) error
 	// ListStatefulSets get set of StatefulSet on a given namespace
 	ListStatefulSets(ctx context.Context, namespace string) (*appsv1.StatefulSetList, error)
 	// ListStatefulsetByLabels
@@ -111,7 +110,7 @@ func (s *StatefulSetOption) CreateStatefulSet(ctx context.Context, namespace str
 	if err != nil {
 		return err
 	}
-	s.logger.WithValues("namespace", namespace, "statefulSet", statefulSet.ObjectMeta.Name).Info("statefulSet created")
+	s.logger.WithValues("namespace", namespace, "statefulSet", statefulSet.ObjectMeta.Name).V(3).Info("statefulSet created")
 	return err
 }
 
@@ -121,7 +120,7 @@ func (s *StatefulSetOption) UpdateStatefulSet(ctx context.Context, namespace str
 	if err != nil {
 		return err
 	}
-	s.logger.WithValues("namespace", namespace, "statefulSet", statefulSet.ObjectMeta.Name).Info("statefulSet updated")
+	s.logger.WithValues("namespace", namespace, "statefulSet", statefulSet.ObjectMeta.Name).V(3).Info("statefulSet updated")
 	return err
 }
 
@@ -163,7 +162,7 @@ func (s *StatefulSetOption) CreateIfNotExistsStatefulSet(ctx context.Context, na
 }
 
 // DeleteStatefulSet implement the StatefulSet.Interface
-func (s *StatefulSetOption) DeleteStatefulSet(ctx context.Context, namespace string, name string, force ...bool) error {
+func (s *StatefulSetOption) DeleteStatefulSet(ctx context.Context, namespace string, name string, opts ...client.DeleteOption) error {
 	statefulset := &appsv1.StatefulSet{}
 	if err := s.client.Get(ctx, types.NamespacedName{
 		Name:      name,
@@ -171,11 +170,7 @@ func (s *StatefulSetOption) DeleteStatefulSet(ctx context.Context, namespace str
 	}, statefulset); err != nil {
 		return err
 	}
-	opts := client.DeleteOptions{}
-	if len(force) > 0 && force[0] {
-		opts.GracePeriodSeconds = pointer.Int64(0)
-	}
-	return s.client.Delete(ctx, statefulset, &opts)
+	return s.client.Delete(ctx, statefulset, opts...)
 }
 
 // ListStatefulSets implement the StatefulSet.Interface

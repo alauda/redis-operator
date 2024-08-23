@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,37 +20,38 @@ import (
 	"testing"
 )
 
-func TestParseIPAndPort(t *testing.T) {
+func TestParseAddress(t *testing.T) {
 	testCases := []struct {
-		input        string
-		expectedIP   string
-		expectedPort int
-		expectError  bool
+		input          string
+		expectedIP     string
+		expectedPort   int
+		exportedString string
+		expectError    bool
 	}{
-		{"192.168.1.1:8080", "192.168.1.1", 8080, false},
-		{"1335::172:168:200:5d1:32428", "1335::172:168:200:5d1", 32428, false},
-		{"invalid-ip:port", "", 0, true},
+		{"192.168.1.1:8080", "192.168.1.1", 8080, "192.168.1.1:8080", false},
+		{"1335::172:168:200:5d1:32428", "1335::172:168:200:5d1", 32428, "[1335::172:168:200:5d1]:32428", false},
+		{"::1:6379", "::1", 6379, "[::1]:6379", false},
+		{":6379", "", 6379, ":6379", false},
+		{"localhost:6379", "localhost", 6379, "localhost:6379", false},
+		{"invalid-ip:port", "", 0, "", true},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.input, func(t *testing.T) {
-			ip, port, err := parseIPAndPort(tc.input)
-
-			if tc.expectError {
-				if err == nil {
+			addr := Address(tc.input)
+			if _, _, err := addr.parse(); err != nil {
+				if !tc.expectError {
 					t.Errorf("Expected an error, but got nil")
 				}
 			} else {
-				if err != nil {
-					t.Errorf("Unexpected error: %v", err)
+				if addr.Host() != tc.expectedIP {
+					t.Errorf("Expected IP: %s, got: %s", tc.expectedIP, addr.Host())
 				}
-
-				if ip.String() != tc.expectedIP {
-					t.Errorf("Expected IP: %s, got: %s", tc.expectedIP, ip.String())
+				if addr.Port() != tc.expectedPort {
+					t.Errorf("Expected port: %d, got: %d", tc.expectedPort, addr.Port())
 				}
-
-				if port != tc.expectedPort {
-					t.Errorf("Expected port: %d, got: %d", tc.expectedPort, port)
+				if addr.String() != tc.exportedString {
+					t.Errorf("Expected string: %s, got: %s", tc.exportedString, addr.String())
 				}
 			}
 		})
