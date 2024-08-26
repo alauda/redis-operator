@@ -1,0 +1,31 @@
+apiVersion: databases.spotahome.com/v1
+kind: RedisSentinel
+metadata:
+  name: redis-sentinel
+spec:
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/component
+            operator: In
+            values:
+            - sentinel
+          - key: redissentinels.databases.spotahome.com/name
+            operator: In
+            values:
+            - redis-sentinel
+        topologyKey: kubernetes.io/hostname
+  expose:
+    type: NodePort
+  image: redis:7.2
+  imagePullPolicy: Always
+  replicas: 3
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi

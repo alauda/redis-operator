@@ -1,0 +1,12 @@
+apiVersion: redis.middleware.alauda.io/v1
+kind: RedisUser
+metadata:
+  name: redisuser-for-failover
+spec:
+  accountType: custom
+  aclRules: +@all -acl -flushall -flushdb -keys ~*
+  arch: sentinel
+  passwordSecrets:
+  - redis-redis-failover-v86ls
+  redisName: redis-failover
+  username: redisuser-for-failover

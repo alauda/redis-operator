@@ -98,13 +98,6 @@ type RedisSpec struct {
 	// CustomConfig defines custom Redis configuration settings. Some of these settings can be modified using the config set command at runtime.
 	// +optional
 	CustomConfig map[string]string `json:"customConfig,omitempty"`
-	// SentinelCustomConfig defines custom Sentinel configuration settings
-	// +kubebuilder:deprecatedversion:warning=remove in 3.20 use sentinel.customConfig instead
-	SentinelCustomConfig map[string]string `json:"sentinelCustomConfig,omitempty"`
-	// RedisProxy defines RedisProxy settings
-	// +optional
-	// +kubebuilder:deprecatedversion:warning=remove in 3.20
-	RedisProxy *RedisProxy `json:"redisProxy,omitempty"`
 	// PodAnnotations holds Kubernetes Pod annotations PodAnnotations
 	// +optional
 	PodAnnotations map[string]string `json:"podAnnotations,omitempty"`
@@ -128,10 +121,6 @@ type RedisSpec struct {
 	// Sentinel defines Sentinel configuration settings Sentinel
 	// +optional
 	Sentinel *redisfailoverv1.SentinelSettings `json:"sentinel,omitempty"`
-	// Backup holds information for Redis backups
-	Backup core.RedisBackup `json:"backup,omitempty"`
-	// Restore contains information for Redis
-	Restore core.RedisRestore `json:"restore,omitempty"`
 
 	// EnableActiveRedis enable active-active model for Redis
 	EnableActiveRedis bool `json:"enableActiveRedis,omitempty"`
@@ -201,10 +190,6 @@ type RedisStatus struct {
 	ServiceName string `json:"serviceName,omitempty"`
 	// Matching labels selector for Redis
 	MatchLabels map[string]string `json:"matchLabels,omitempty"`
-	// Matching label selector for Redis proxy.
-	ProxyMatchLabels map[string]string `json:"proxyMatchLabels,omitempty"`
-	// The name of the kubernetes Service for Redis Proxy
-	ProxyServiceName string `json:"proxyServiceName,omitempty"`
 	// ClusterNodes redis nodes info
 	ClusterNodes []core.RedisNode `json:"clusterNodes,omitempty"`
 	// Restored indicates whether the instance has been restored from a backup.
@@ -308,32 +293,6 @@ func (r *Redis) RecoverStatusError() {
 		r.Status.Phase = RedisPhaseInit
 	}
 	// r.Status.Message = ""
-}
-
-type RedisProxy struct {
-	// a boolean indicating whether or not the Redis Proxy service is enabled.
-	Enable bool `json:"enable,omitempty"`
-	// a string representing the Docker image to use for the proxy.
-	Image string `json:"image,omitempty"`
-	// an integer indicating the number of replicas to create for the proxy.
-	Replicas int32 `json:"replicas,omitempty"`
-	// a map holding additional configuration options for the proxy.
-	Config map[string]string `json:"config,omitempty"`
-	// Resources holds ResourceRequirements for the MySQL Agent & Server Containers
-	// +optional
-	Resources *v1.ResourceRequirements `json:"resources,omitempty"`
-	// Tolerations allows specifying a list of tolerations for controlling which
-	// set of Nodes a Pod can be scheduled on
-	// +optional
-	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
-	// NodeSelector is a selector which must be true for the pod to fit on a node.
-	// Selector which must match a node's labels for the pod to be scheduled on that node.
-	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
-	// +optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// If specified, affinity will define the pod's scheduling constraints
-	// +optional
-	Affinity *v1.Affinity `json:"affinity,omitempty"`
 }
 
 func (r *Redis) SetPasswordSecret(secretName string) {

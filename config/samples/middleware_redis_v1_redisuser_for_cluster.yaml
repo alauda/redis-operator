@@ -1,0 +1,12 @@
+apiVersion: redis.middleware.alauda.io/v1
+kind: RedisUser
+metadata:
+  name: redisuser-for-cluster
+spec:
+  accountType: default
+  aclRules: +@all -acl -flushall -flushdb -keys ~*
+  arch: cluster
+  passwordSecrets:
+  - redis-redis-cluster-7lt69
+  redisName: redis-cluster
+  username: redisuser-for-cluster

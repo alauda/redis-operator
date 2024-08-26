@@ -103,8 +103,6 @@ func GenerateRedisCluster(instance *v1.Redis, bv *vc.BundleVersion) (*v1alpha1.D
 			InstanceAccessBase: *instance.Spec.Expose.InstanceAccessBase.DeepCopy(),
 			IPFamilyPrefer:     instance.Spec.IPFamilyPrefer,
 		}
-		backup      = instance.Spec.Backup
-		restore     = instance.Spec.Restore
 		annotations = map[string]string{}
 	)
 	for key, comp := range bv.Spec.Components {
@@ -116,16 +114,6 @@ func GenerateRedisCluster(instance *v1.Redis, bv *vc.BundleVersion) (*v1alpha1.D
 	}
 
 	access.Image, _ = bv.GetRedisToolsImage()
-	if len(backup.Schedule) > 0 {
-		backup.Image, _ = bv.GetRedisToolsImage()
-	}
-	if restore.BackupName != "" {
-		restore.Image, _ = bv.GetRedisToolsImage()
-	}
-	if instance.Status.Restored {
-		restore = core.RedisRestore{}
-	}
-
 	exporterImage, _ := bv.GetRedisExporterImage()
 	monitor := &v1alpha1.Monitor{
 		Image: exporterImage,
@@ -185,8 +173,6 @@ func GenerateRedisCluster(instance *v1.Redis, bv *vc.BundleVersion) (*v1alpha1.D
 			ServiceID:                instance.Spec.ServiceID,
 			// with custom images
 			Expose:  access,
-			Backup:  backup,
-			Restore: restore,
 			Monitor: monitor,
 		},
 	}
@@ -259,10 +245,6 @@ func ShouldUpdateCluster(cluster, newCluster *v1alpha1.DistributedRedisCluster, 
 		logger.V(3).Info("pod annotations diff")
 		return true
 	}
-	if diffBackup(&cluster.Spec.Backup, &newCluster.Spec.Backup) {
-		logger.V(3).Info("redis backup diff")
-		return true
-	}
 	if !reflect.DeepEqual(&cluster.Spec.Restore, &newCluster.Spec.Restore) {
 		logger.V(3).Info("redis restore diff")
 		return true
@@ -314,8 +296,6 @@ func GenerateClusterRedisByManagerUI(cluster *v1alpha1.DistributedRedisCluster, 
 					Slave: &cluster.Spec.ClusterReplicas,
 				},
 			},
-			Backup:          cluster.Spec.Backup,
-			Restore:         cluster.Spec.Restore,
 			Affinity:        cluster.Spec.Affinity,
 			NodeSelector:    cluster.Spec.NodeSelector,
 			Tolerations:     cluster.Spec.Tolerations,

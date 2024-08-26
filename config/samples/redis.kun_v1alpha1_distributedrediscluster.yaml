@@ -1,6 +1,0 @@
-apiVersion: redis.kun/v1alpha1
-kind: DistributedRedisCluster
-metadata:
-  name: distributedrediscluster-sample
-spec:
-  # TODO(user): Add fields here
