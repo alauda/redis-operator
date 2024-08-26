@@ -2,18 +2,19 @@ FROM golang:1.22-alpine as builder
 
 WORKDIR /workspace
 
-# Dependencies are cached unless we change go.mod or go.sum
-COPY go.mod go.mod
-COPY go.sum go.sum
-RUN GOPROXY=https://goproxy.io,direct go mod download
-
 # Copy the go source
+COPY version version
 COPY api/ api/
 COPY cmd/ cmd/
 COPY internal/ internal/
 COPY pkg/ pkg/
 COPY tools/ tools/
+COPY Makefile Makefile
 
+# Dependencies are cached unless we change go.mod or go.sum
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN GOPROXY=https://goproxy.io,direct go mod download
 
 RUN CGO_ENABLED=0 go build -a -tags timetzdata -buildmode=pie -ldflags '-extldflags "-Wl,-z,relro,-z,now"' -a -o manager cmd/main.go 
 RUN CGO_ENABLED=0 go build -a -tags timetzdata -buildmode=pie -ldflags '-extldflags "-Wl,-z,relro,-z,now"' -a -o redis-tools cmd/redis-tools/main.go

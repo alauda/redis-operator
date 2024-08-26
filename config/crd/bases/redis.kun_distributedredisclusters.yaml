@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.0
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: distributedredisclusters.redis.kun
 spec:
   group: redis.kun
@@ -67,7 +67,9 @@ spec:
               DistributedRedisCluster
             properties:
               affinity:
-                description: Affinity
+                description: |-
+                  Affinity
+                  TODO: remove in 3.20
                 properties:
                   nodeAffinity:
                     description: Describes node affinity scheduling rules for the
@@ -904,6 +906,7 @@ spec:
                 description: |-
                   Use this map to setup redis service. Most of the settings is key-value format.
 
+
                   For client-output-buffer-limit and rename, the values is split by group.
                 type: object
               containerSecurityContext:
@@ -1033,6 +1036,7 @@ spec:
                           type indicates which kind of seccomp profile will be applied.
                           Valid options are:
 
+
                           Localhost - a profile defined in a file on the node should be used.
                           RuntimeDefault - the container runtime default profile should be used.
                           Unconfined - no profile should be applied.
@@ -1080,7 +1084,9 @@ spec:
                 description: EnableTLS
                 type: boolean
               env:
-                description: Env is the environment variables
+                description: |-
+                  Env is the environment variables
+                  TODO: remove in 3.20
                 items:
                   description: EnvVar represents an environment variable present in
                     a Container.
@@ -1114,6 +1120,7 @@ spec:
                               description: |-
                                 Name of the referent.
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                TODO: Add other useful fields. apiVersion, kind, uid?
                               type: string
                             optional:
                               description: Specify whether the ConfigMap or its key
@@ -1175,6 +1182,7 @@ spec:
                               description: |-
                                 Name of the referent.
                                 More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                TODO: Add other useful fields. apiVersion, kind, uid?
                               type: string
                             optional:
                               description: Specify whether the Secret or its key must
@@ -1190,7 +1198,9 @@ spec:
                   type: object
                 type: array
               expose:
-                description: Expose config for service access
+                description: |-
+                  Expose config for service access
+                  TODO: should rename Expose to Access
                 properties:
                   accessPort:
                     description: AccessPort defines the lb access nodeport
@@ -1208,6 +1218,7 @@ spec:
                       type: integer
                     description: |-
                       NodePortMap defines the map of the nodeport for redis sentinel only
+                      TODO: deprecated this field with NodePortSequence in 3.22
                       Reversed for 3.14 backward compatibility
                     type: object
                   dataStorageNodePortSequence:
@@ -1242,7 +1253,9 @@ spec:
                 description: Image is the Redis image
                 type: string
               imagePullPolicy:
-                description: ImagePullPolicy is the Redis image pull policy
+                description: |-
+                  ImagePullPolicy is the Redis image pull policy
+                  TODO: reset the default value to IfNotPresent in 3.20
                 type: string
               imagePullSecrets:
                 items:
@@ -1254,6 +1267,7 @@ spec:
                       description: |-
                         Name of the referent.
                         More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
@@ -1267,7 +1281,9 @@ spec:
                 minimum: 3
                 type: integer
               monitor:
-                description: Monitor
+                description: |-
+                  Monitor
+                  TODO: added an global button to controller wether to enable monitor
                 properties:
                   args:
                     description: |-
@@ -1320,6 +1336,7 @@ spec:
                                   description: |-
                                     Name of the referent.
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
                                   description: Specify whether the ConfigMap or its
@@ -1382,6 +1399,7 @@ spec:
                                   description: |-
                                     Name of the referent.
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
                                   description: Specify whether the Secret or its key
@@ -1403,7 +1421,7 @@ spec:
                       a container image
                     type: string
                   prometheus:
-                    description: "PrometheusSpec\n\n\tthis struct must be Deprecated,
+                    description: "PrometheusSpec\n\n\n\tthis struct must be Deprecated,
                       only port is used."
                     properties:
                       interval:
@@ -1435,8 +1453,10 @@ spec:
                           Claims lists the names of resources, defined in spec.resourceClaims,
                           that are used by this container.
 
+
                           This is an alpha field and requires enabling the
                           DynamicResourceAllocation feature gate.
+
 
                           This field is immutable. It can only be set for containers.
                         items:
@@ -1609,6 +1629,7 @@ spec:
                               type indicates which kind of seccomp profile will be applied.
                               Valid options are:
 
+
                               Localhost - a profile defined in a file on the node should be used.
                               RuntimeDefault - the container runtime default profile should be used.
                               Unconfined - no profile should be applied.
@@ -1664,12 +1685,14 @@ spec:
                     description: |-
                       Name of the referent.
                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
               requiredAntiAffinity:
-                description: Set RequiredAntiAffinity to force the master-slave node
-                  anti-affinity.
+                description: |-
+                  Set RequiredAntiAffinity to force the master-slave node anti-affinity.
+                  TODO: remove in 3.20
                 type: boolean
               resources:
                 description: ResourceRequirements describes the compute resource requirements.
@@ -1679,8 +1702,10 @@ spec:
                       Claims lists the names of resources, defined in spec.resourceClaims,
                       that are used by this container.
 
+
                       This is an alpha field and requires enabling the
                       DynamicResourceAllocation feature gate.
+
 
                       This field is immutable. It can only be set for containers.
                     items:
@@ -1748,9 +1773,11 @@ spec:
                       Some volume types allow the Kubelet to change the ownership of that volume
                       to be owned by the pod:
 
+
                       1. The owning GID will be the FSGroup
                       2. The setgid bit is set (new files created in the volume will be owned by FSGroup)
                       3. The permission bits are OR'd with rw-rw----
+
 
                       If unset, the Kubelet will not modify the ownership and permissions of any volume.
                       Note that this field cannot be set when spec.os.name is windows.
@@ -1837,6 +1864,7 @@ spec:
                         description: |-
                           type indicates which kind of seccomp profile will be applied.
                           Valid options are:
+
 
                           Localhost - a profile defined in a file on the node should be used.
                           RuntimeDefault - the container runtime default profile should be used.
@@ -1986,7 +2014,9 @@ spec:
                     type: string
                 type: object
               serviceName:
-                description: ServiceName is the service name
+                description: |-
+                  ServiceName is the service name
+                  TODO: remove in 3.20, this should not changed or specified
                 type: string
               shards:
                 description: |-
@@ -2086,6 +2116,7 @@ spec:
                       the event) or if no container name is specified "spec.containers[2]" (container with
                       index 2 in this pod). This syntax is chosen only to have some well-defined way of
                       referencing a part of an object.
+                      TODO: this design is not final and this field is subject to change in the future.
                     type: string
                   kind:
                     description: |-

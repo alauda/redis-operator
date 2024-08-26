@@ -1386,12 +1386,12 @@ func (_m *ClientSet) GetJob(ctx context.Context, namespace string, name string) 
 	return r0, r1
 }
 
-// GetNameSpace provides a mock function with given fields: ctx, namespace
-func (_m *ClientSet) GetNameSpace(ctx context.Context, namespace string) (*corev1.Namespace, error) {
+// GetNamespace provides a mock function with given fields: ctx, namespace
+func (_m *ClientSet) GetNamespace(ctx context.Context, namespace string) (*corev1.Namespace, error) {
 	ret := _m.Called(ctx, namespace)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetNameSpace")
+		panic("no return value specified for GetNamespace")
 	}
 
 	var r0 *corev1.Namespace

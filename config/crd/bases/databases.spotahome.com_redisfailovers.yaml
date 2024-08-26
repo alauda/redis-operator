@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.0
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: redisfailovers.databases.spotahome.com
 spec:
   group: databases.spotahome.com
@@ -74,6 +74,7 @@ spec:
                 description: EnableActiveRedis enable active-active model for Redis
                 type: boolean
               labelWhitelist:
+                description: 'TODO: remove this field in 3.20, which not used'
                 items:
                   type: string
                 type: array
@@ -927,8 +928,10 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
+
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
+
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -992,6 +995,7 @@ spec:
                           type: integer
                         description: |-
                           NodePortMap defines the map of the nodeport for redis sentinel only
+                          TODO: deprecated this field with NodePortSequence in 3.22
                           Reversed for 3.14 backward compatibility
                         type: object
                       dataStorageNodePortSequence:
@@ -1039,6 +1043,7 @@ spec:
                           description: |-
                             Name of the referent.
                             More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?
                           type: string
                       type: object
                       x-kubernetes-map-type: atomic
@@ -1063,8 +1068,10 @@ spec:
                           Claims lists the names of resources, defined in spec.resourceClaims,
                           that are used by this container.
 
+
                           This is an alpha field and requires enabling the
                           DynamicResourceAllocation feature gate.
+
 
                           This field is immutable. It can only be set for containers.
                         items:
@@ -1133,9 +1140,11 @@ spec:
                           Some volume types allow the Kubelet to change the ownership of that volume
                           to be owned by the pod:
 
+
                           1. The owning GID will be the FSGroup
                           2. The setgid bit is set (new files created in the volume will be owned by FSGroup)
                           3. The permission bits are OR'd with rw-rw----
+
 
                           If unset, the Kubelet will not modify the ownership and permissions of any volume.
                           Note that this field cannot be set when spec.os.name is windows.
@@ -1222,6 +1231,7 @@ spec:
                             description: |-
                               type indicates which kind of seccomp profile will be applied.
                               Valid options are:
+
 
                               Localhost - a profile defined in a file on the node should be used.
                               RuntimeDefault - the container runtime default profile should be used.
@@ -1460,8 +1470,10 @@ spec:
                                       Claims lists the names of resources, defined in spec.resourceClaims,
                                       that are used by this container.
 
+
                                       This is an alpha field and requires enabling the
                                       DynamicResourceAllocation feature gate.
+
 
                                       This field is immutable. It can only be set for containers.
                                     items:
@@ -1596,7 +1608,7 @@ spec:
                                   names such as \"example.com/my-custom-resource\"\nApart
                                   from above values - keys that are unprefixed or
                                   have kubernetes.io prefix are considered\nreserved
-                                  and hence may not be used.\n\nClaimResourceStatus
+                                  and hence may not be used.\n\n\nClaimResourceStatus
                                   can be in any of following states:\n\t- ControllerResizeInProgress:\n\t\tState
                                   set when resize controller starts resizing the volume
                                   in control-plane.\n\t- ControllerResizeFailed:\n\t\tState
@@ -1617,14 +1629,14 @@ spec:
                                   = \"NodeResizeInProgress\"\n     - pvc.status.allocatedResourceStatus['storage']
                                   = \"NodeResizeFailed\"\nWhen this field is not set,
                                   it means that no resize operation is in progress
-                                  for the given PVC.\n\nA controller that receives
+                                  for the given PVC.\n\n\nA controller that receives
                                   PVC update with previously unknown resourceName
                                   or ClaimResourceStatus\nshould ignore the update
                                   for the purpose it was designed. For example - a
                                   controller that\nonly is responsible for resizing
                                   capacity of the volume, should ignore PVC updates
                                   that change other valid\nresources associated with
-                                  PVC.\n\nThis is an alpha field and requires enabling
+                                  PVC.\n\n\nThis is an alpha field and requires enabling
                                   RecoverVolumeExpansionFailure feature."
                                 type: object
                                 x-kubernetes-map-type: granular
@@ -1644,7 +1656,7 @@ spec:
                                   names such as \"example.com/my-custom-resource\"\nApart
                                   from above values - keys that are unprefixed or
                                   have kubernetes.io prefix are considered\nreserved
-                                  and hence may not be used.\n\nCapacity reported
+                                  and hence may not be used.\n\n\nCapacity reported
                                   here may be larger than the actual capacity when
                                   a volume expansion operation\nis requested.\nFor
                                   storage quota, the larger value from allocatedResources
@@ -1654,13 +1666,13 @@ spec:
                                   request is lowered, allocatedResources is only\nlowered
                                   if there are no expansion operations in progress
                                   and if the actual volume capacity\nis equal or lower
-                                  than the requested capacity.\n\nA controller that
+                                  than the requested capacity.\n\n\nA controller that
                                   receives PVC update with previously unknown resourceName\nshould
                                   ignore the update for the purpose it was designed.
                                   For example - a controller that\nonly is responsible
                                   for resizing capacity of the volume, should ignore
                                   PVC updates that change other valid\nresources associated
-                                  with PVC.\n\nThis is an alpha field and requires
+                                  with PVC.\n\n\nThis is an alpha field and requires
                                   enabling RecoverVolumeExpansionFailure feature."
                                 type: object
                               capacity:
@@ -2572,6 +2584,7 @@ spec:
                           type: integer
                         description: |-
                           NodePortMap defines the map of the nodeport for redis sentinel only
+                          TODO: deprecated this field with NodePortSequence in 3.22
                           Reversed for 3.14 backward compatibility
                         type: object
                       dataStorageNodePortSequence:
@@ -2624,6 +2637,7 @@ spec:
                           description: |-
                             Name of the referent.
                             More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                            TODO: Add other useful fields. apiVersion, kind, uid?
                           type: string
                       type: object
                       x-kubernetes-map-type: atomic
@@ -2668,8 +2682,10 @@ spec:
                           Claims lists the names of resources, defined in spec.resourceClaims,
                           that are used by this container.
 
+
                           This is an alpha field and requires enabling the
                           DynamicResourceAllocation feature gate.
+
 
                           This field is immutable. It can only be set for containers.
                         items:
@@ -2725,9 +2741,11 @@ spec:
                           Some volume types allow the Kubelet to change the ownership of that volume
                           to be owned by the pod:
 
+
                           1. The owning GID will be the FSGroup
                           2. The setgid bit is set (new files created in the volume will be owned by FSGroup)
                           3. The permission bits are OR'd with rw-rw----
+
 
                           If unset, the Kubelet will not modify the ownership and permissions of any volume.
                           Note that this field cannot be set when spec.os.name is windows.
@@ -2814,6 +2832,7 @@ spec:
                             description: |-
                               type indicates which kind of seccomp profile will be applied.
                               Valid options are:
+
 
                               Localhost - a profile defined in a file on the node should be used.
                               RuntimeDefault - the container runtime default profile should be used.
@@ -2989,6 +3008,7 @@ spec:
                       the event) or if no container name is specified "spec.containers[2]" (container with
                       index 2 in this pod). This syntax is chosen only to have some well-defined way of
                       referencing a part of an object.
+                      TODO: this design is not final and this field is subject to change in the future.
                     type: string
                   kind:
                     description: |-
@@ -3154,7 +3174,9 @@ spec:
                 description: TLSSecret the tls secret
                 type: string
               version:
-                description: Version
+                description: |-
+                  Version
+                  TODO: remove this field in 3.20, which not used
                 type: string
             type: object
         type: object
