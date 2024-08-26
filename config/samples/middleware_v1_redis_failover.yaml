@@ -18,7 +18,6 @@ spec:
             - redis-failover
         topologyKey: kubernetes.io/hostname
   arch: sentinel
-  backup: {}
   customConfig:
     acllog-max-len: "128"
     active-defrag-cycle-max: "25"
@@ -128,7 +127,6 @@ spec:
     requests:
       cpu: 300m
       memory: 300Mi
-  restore: {}
   sentinel:
     affinity:
       podAntiAffinity:

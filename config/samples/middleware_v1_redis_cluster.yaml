@@ -5,7 +5,6 @@ metadata:
 spec:
   affinityPolicy: AntiAffinityInSharding
   arch: cluster
-  backup: {}
   customConfig:
     acllog-max-len: "128"
     active-defrag-cycle-max: "25"
