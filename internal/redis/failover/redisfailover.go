@@ -817,7 +817,7 @@ func (s *RedisFailover) IsResourceFullfilled(ctx context.Context) (bool, error) 
 		}
 	}
 
-	{
+	if !s.IsStandalone() {
 		// check sentinel
 		newSen := failoverbuilder.NewFailoverSentinel(s)
 		oldSen, err := s.client.GetRedisSentinel(ctx, s.GetNamespace(), s.GetName())
