@@ -28,7 +28,7 @@ type ClientSet interface {
 	clientset.CronJob
 	clientset.Deployment
 	clientset.Job
-	clientset.NameSpaces
+	clientset.Namespaces
 	clientset.Pod
 	clientset.PodDisruptionBudget
 	clientset.PVC

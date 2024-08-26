@@ -8,13 +8,17 @@ rules:
   - '*'
   resources:
   - configmaps
+  - configmaps/finalizers
   - endpoints
+  - persistentvolumeclaims
+  - persistentvolumeclaims/finalizers
   - pods
   - pods/exec
+  - secrets
+  - secrets/finalizers
   - services
   - services/finalizers
   verbs:
-  - '*'
   - create
   - delete
   - deletecollection
@@ -26,20 +30,14 @@ rules:
 - apiGroups:
   - '*'
   resources:
-  - configmaps/finalizers
-  - persistentvolumeclaims
-  - persistentvolumeclaims/finalizers
-  - secrets
-  - secrets/finalizers
+  - configmaps
+  - endpoints
+  - pods
+  - pods/exec
+  - services
+  - services/finalizers
   verbs:
-  - create
-  - delete
-  - deletecollection
-  - get
-  - list
-  - patch
-  - update
-  - watch
+  - '*'
 - apiGroups:
   - '*'
   resources:
@@ -143,7 +141,6 @@ rules:
   - databases.spotahome.com
   resources:
   - redisfailovers
-  - redissentinels
   verbs:
   - create
   - delete
@@ -156,13 +153,37 @@ rules:
   - databases.spotahome.com
   resources:
   - redisfailovers/finalizers
-  - redissentinels/finalizers
   verbs:
   - update
 - apiGroups:
   - databases.spotahome.com
   resources:
   - redisfailovers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - databases.spotahome.com
+  resources:
+  - redissentinels
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - databases.spotahome.com
+  resources:
+  - redissentinels/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - databases.spotahome.com
+  resources:
   - redissentinels/status
   verbs:
   - get
@@ -238,6 +259,12 @@ rules:
 - apiGroups:
   - redis.kun
   resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - redis.kun
+  resources:
   - distributedredisclusters
   verbs:
   - create
@@ -262,7 +289,6 @@ rules:
   - patch
   - update
 - apiGroups:
-  - redis.kun
   - redis.middleware.alauda.io
   resources:
   - '*'

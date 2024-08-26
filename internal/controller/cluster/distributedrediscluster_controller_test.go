@@ -62,7 +62,7 @@ var _ = Describe("DistributedRedisClusterReconciler", func() {
 						Namespace: namespace,
 					},
 					Spec: rediskunv1alpha1.DistributedRedisClusterSpec{
-						Image:           "redis:6.0.20",
+						Image:           "redis:6.0",
 						MasterSize:      3,
 						ClusterReplicas: 1,
 						Config: map[string]string{
@@ -95,6 +95,7 @@ var _ = Describe("DistributedRedisClusterReconciler", func() {
 			By("Cleanup the specific resource instance Cron")
 			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
 		})
+
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
 

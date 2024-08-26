@@ -28,6 +28,7 @@ bin/
 
 .DS_Store
 .vscode/*
+default.etcd/
 coverage.txt
 bundle/*
 bundle.Dockerfile

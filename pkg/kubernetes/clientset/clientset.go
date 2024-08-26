@@ -29,7 +29,7 @@ type ClientSet interface {
 	CronJob
 	Deployment
 	Job
-	NameSpaces
+	Namespaces
 	Pod
 	PodDisruptionBudget
 	PVC
@@ -54,7 +54,7 @@ type clientSet struct {
 	CronJob
 	Deployment
 	Job
-	NameSpaces
+	Namespaces
 	Pod
 	PodDisruptionBudget
 	PVC
@@ -92,7 +92,7 @@ func NewWithConfig(kubecli client.Client, restConfig *rest.Config, logger logr.L
 		CronJob:             NewCronJob(kubecli, logger),
 		Deployment:          NewDeployment(kubecli, logger),
 		Job:                 NewJob(kubecli, logger),
-		NameSpaces:          NewNameSpaces(logger),
+		Namespaces:          NewNamespaces(kubecli, logger),
 		Pod:                 NewPod(kubecli, restConfig, logger),
 		PodDisruptionBudget: NewPodDisruptionBudget(kubecli, logger),
 		PVC:                 NewPVCService(kubecli, logger),

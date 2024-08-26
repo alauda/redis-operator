@@ -23,40 +23,31 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-// NameSpaces the client that knows how to interact with kubernetes to manage them
-type NameSpaces interface {
-	// GetNameSpace get namespace info form kubernetes
-	GetNameSpace(ctx context.Context, namespace string) (*corev1.Namespace, error)
+// Namespaces the client that knows how to interact with kubernetes to manage them
+type Namespaces interface {
+	// GetNamespace get namespace info form kubernetes
+	GetNamespace(ctx context.Context, namespace string) (*corev1.Namespace, error)
 }
 
 // NameSpacesOption is the NameSpaces client implementation using API calls to kubernetes.
-type NameSpacesOption struct {
+type NamespacesOption struct {
 	client client.Client
 	logger logr.Logger
 }
 
-// NewNameSpaces returns a new NameSpaces client.
-func NewNameSpaces(logger logr.Logger) NameSpaces {
-	logger = logger.WithValues("service", "k8s.namespaces")
-	cfg, err := config.GetConfig()
-	if err != nil {
-		panic(err)
-	}
-	kubeClient, err := client.New(cfg, client.Options{})
-	if err != nil {
-		panic(err)
-	}
-	return &NameSpacesOption{
+// NewNameSpaces returns a new Namespaces client.
+func NewNamespaces(kubeClient client.Client, logger logr.Logger) *NamespacesOption {
+	logger = logger.WithValues("service", "k8s.namespace")
+	return &NamespacesOption{
 		client: kubeClient,
 		logger: logger,
 	}
 }
 
-// GetNameSpace implement the NameSpaces.Interface
-func (n *NameSpacesOption) GetNameSpace(ctx context.Context, namespace string) (*corev1.Namespace, error) {
+// GetNameSpace implement the Namespaces.Interface
+func (n *NamespacesOption) GetNamespace(ctx context.Context, namespace string) (*corev1.Namespace, error) {
 	nm := &corev1.Namespace{}
 	err := n.client.Get(ctx, types.NamespacedName{
 		Name:      namespace,
