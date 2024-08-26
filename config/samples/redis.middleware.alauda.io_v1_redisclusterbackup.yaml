@@ -1,6 +1,0 @@
-apiVersion: redis.middleware.alauda.io/v1
-kind: RedisClusterBackup
-metadata:
-  name: redisclusterbackup-sample
-spec:
-  # TODO(user): Add fields here

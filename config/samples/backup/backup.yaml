@@ -1,9 +1,0 @@
-apiVersion: redis.middleware.alauda.io/v1
-kind: RedisBackup
-metadata:
-  name: redis-backup-demo
-spec:
-  source:
-    redisFailoverName: redis-sentinel-demo
-    storageClassName: ''
-  storage: 1Gi

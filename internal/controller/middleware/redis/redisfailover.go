@@ -58,8 +58,6 @@ func GenerateRedisFailover(instance *v1.Redis, bv *vc.BundleVersion) (*redisfail
 			IPFamilyPrefer:     instance.Spec.IPFamilyPrefer,
 		}
 		exporter = instance.Spec.Exporter.DeepCopy()
-		backup   = instance.Spec.Backup
-		restore  = instance.Spec.Restore
 		sentinel = instance.Spec.Sentinel
 
 		annotations = map[string]string{}
@@ -93,16 +91,6 @@ func GenerateRedisFailover(instance *v1.Redis, bv *vc.BundleVersion) (*redisfail
 	// HARDCODE: compatible with 3.14.x
 	if strings.HasPrefix(bv.Spec.CrVersion, "3.14.") {
 		access.Image, _ = bv.GetExposePodImage()
-	}
-
-	if len(backup.Schedule) > 0 {
-		backup.Image, _ = bv.GetRedisToolsImage()
-	}
-	if restore.BackupName != "" {
-		restore.Image, _ = bv.GetRedisToolsImage()
-	}
-	if instance.Status.Restored {
-		restore = core.RedisRestore{}
 	}
 
 	if sentinel != nil {
@@ -158,8 +146,6 @@ func GenerateRedisFailover(instance *v1.Redis, bv *vc.BundleVersion) (*redisfail
 				CustomConfig:   instance.Spec.CustomConfig,
 				PodAnnotations: lo.Assign(instance.Spec.PodAnnotations),
 				Exporter:       *exporter,
-				Backup:         backup,
-				Restore:        restore,
 				Expose:         access,
 				EnableTLS:      instance.Spec.EnableTLS,
 
@@ -281,19 +267,16 @@ func GenerateFailoverRedisByManagerUI(failover *redisfailover.RedisFailover, sts
 					Slave:  &slave,
 				},
 			},
-			Backup:               failover.Spec.Redis.Backup,
-			Restore:              failover.Spec.Redis.Restore,
-			Affinity:             failover.Spec.Redis.Affinity,
-			NodeSelector:         failover.Spec.Redis.NodeSelector,
-			Tolerations:          failover.Spec.Redis.Tolerations,
-			SecurityContext:      failover.Spec.Redis.SecurityContext,
-			CustomConfig:         failover.Spec.Redis.CustomConfig,
-			PodAnnotations:       failover.Spec.Redis.PodAnnotations,
-			Sentinel:             failover.Spec.Sentinel,
-			SentinelCustomConfig: failover.Spec.Sentinel.CustomConfig,
-			Exporter:             &failover.Spec.Redis.Exporter,
-			EnableTLS:            failover.Spec.Redis.EnableTLS,
-			PasswordSecret:       failover.Spec.Auth.SecretPath,
+			Affinity:        failover.Spec.Redis.Affinity,
+			NodeSelector:    failover.Spec.Redis.NodeSelector,
+			Tolerations:     failover.Spec.Redis.Tolerations,
+			SecurityContext: failover.Spec.Redis.SecurityContext,
+			CustomConfig:    failover.Spec.Redis.CustomConfig,
+			PodAnnotations:  failover.Spec.Redis.PodAnnotations,
+			Sentinel:        failover.Spec.Sentinel,
+			Exporter:        &failover.Spec.Redis.Exporter,
+			EnableTLS:       failover.Spec.Redis.EnableTLS,
+			PasswordSecret:  failover.Spec.Auth.SecretPath,
 		},
 	}
 
@@ -316,48 +299,6 @@ func GenerateFailoverRedisByManagerUI(failover *redisfailover.RedisFailover, sts
 		instance.Labels[k] = v
 	}
 	return instance
-}
-
-func diffBackup(b1, b2 *core.RedisBackup) bool {
-	if b1 == nil && b2 == nil {
-		return false
-	}
-	if (b1 == nil && b2 != nil) || (b1 != nil && b2 == nil) {
-		return true
-	}
-
-	if b1.Image != b2.Image {
-		return true
-	}
-	if len(b1.Schedule) != len(b2.Schedule) {
-		return true
-	} else if len(b1.Schedule) > 0 {
-		for i, s := range b1.Schedule {
-			ss := b2.Schedule[i]
-			if s.Schedule != ss.Schedule {
-				return true
-			}
-			if s.Name != ss.Name {
-				return true
-			}
-			if s.Keep != ss.Keep {
-				return true
-			}
-			if s.KeepAfterDeletion != ss.KeepAfterDeletion {
-				return true
-			}
-			if s.Storage.StorageClassName != ss.Storage.StorageClassName {
-				return true
-			}
-			if s.Storage.Size.Size() != ss.Storage.Size.Size() {
-				return true
-			}
-			if !reflect.DeepEqual(s.Target.S3Option, ss.Target.S3Option) {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 func resourceDiff(r1 corev1.ResourceRequirements, r2 corev1.ResourceRequirements) bool {

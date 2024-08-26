@@ -184,7 +184,6 @@ func (r *Redis) Default() {
 
 	switch r.Spec.Arch {
 	case core.RedisSentinel:
-		r.Spec.RedisProxy = nil
 		if r.Spec.Replicas == nil {
 			r.Spec.Replicas = &RedisReplicas{}
 		}
@@ -200,10 +199,6 @@ func (r *Redis) Default() {
 			}
 			if r.Spec.Sentinel.Replicas <= 0 {
 				r.Spec.Sentinel.Replicas = 3
-			}
-			if len(r.Spec.SentinelCustomConfig) != 0 {
-				r.Spec.Sentinel.MonitorConfig = r.Spec.SentinelCustomConfig
-				r.Spec.SentinelCustomConfig = nil
 			}
 
 			sentinel := r.Spec.Sentinel
@@ -254,9 +249,7 @@ func (r *Redis) Default() {
 		}
 		r.Spec.Replicas.Sentinel.Master = pointer.Int32(1)
 		r.Spec.Replicas.Sentinel.Slave = nil
-		r.Spec.RedisProxy = nil
 		r.Spec.Sentinel = nil
-		r.Spec.SentinelCustomConfig = nil
 
 		if r.Spec.Expose.ServiceType == v1.ServiceTypeNodePort {
 			if len(r.Spec.Expose.NodePortMap) != 0 {

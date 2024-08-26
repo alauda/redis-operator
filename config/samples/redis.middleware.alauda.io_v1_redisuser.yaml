@@ -1,6 +1,0 @@
-apiVersion: redis.middleware.alauda.io/v1
-kind: RedisUser
-metadata:
-  name: redisuser-sample
-spec:
-  # TODO(user): Add fields here

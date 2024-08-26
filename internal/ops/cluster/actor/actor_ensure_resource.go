@@ -688,8 +688,6 @@ func (a *actorEnsureResource) fetchAllPodBindedServices(ctx context.Context, nam
 	return services, nil
 }
 
-// NOTE: removed proxy ensure, remove proxy ensure to rds
-
 const (
 	redisRestartAnnotation = "kubectl.kubernetes.io/restartedAt"
 )

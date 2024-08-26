@@ -1,8 +1,7 @@
 resources:
-  - cluster/cluster.yaml
-  - cluster/backup.yaml
-  - backup/backup.yaml
-  - sentinel/sentinel.yaml
-  - proxy/proxy.yaml
-  - shake/redisshake.yaml
-  - redis.middleware.alauda.io_v1_redisuser.yaml
+  - middleware_v1_redis_cluster.yaml
+  - middleware_v1_redis_failover.yaml
+  - middleware_v1_redis_standalone.yaml
+  - middleware_redis_v1_redisuser_for_cluster.yaml
+  - middleware_redis_v1_redisuser_for_failover.yaml
+  - databases_spotahome_com_v1_sentinel.yaml
