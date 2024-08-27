@@ -46,6 +46,7 @@ const (
 	PasswordENV                  = "REDIS_PASSWORD"
 	redisConfigurationVolumeName = "redis-config"
 	RedisTmpVolumeName           = "redis-tmp"
+	RedisExporterTempVolumeName  = "exporter-temp"
 	RedisTLSVolumeName           = "redis-tls"
 	redisAuthName                = "redis-auth"
 	redisStandaloneVolumeName    = "redis-standalone"
@@ -471,8 +472,16 @@ func createRedisExporterContainer(rf *v1.RedisFailover, opUser *user.User) corev
 		}
 	}
 
+	const DefaultPasswordFile = "/tmp/passwords.json"
+	entrypoint := fmt.Sprintf(`
+if [ -f /account/password ]; then
+    echo "{\"${REDIS_ADDR}\": \"$(cat /account/password)\"}" > %s
+fi
+/redis_exporter`, DefaultPasswordFile)
+
 	container := corev1.Container{
 		Name:            exporterContainerName,
+		Command:         []string{"/bin/sh", "-c", entrypoint},
 		Image:           rf.Spec.Redis.Exporter.Image,
 		ImagePullPolicy: builder.GetPullPolicy(rf.Spec.Redis.Exporter.ImagePullPolicy),
 		Env: []corev1.EnvVar{
@@ -512,23 +521,16 @@ func createRedisExporterContainer(rf *v1.RedisFailover, opUser *user.User) corev
 	}
 
 	if secret != "" {
-		//挂载 rf.Spec.Auth.SecretPath 到account
-		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-			Name:      redisAuthName,
-			MountPath: "/account",
-		})
+		container.VolumeMounts = append(container.VolumeMounts,
+			corev1.VolumeMount{Name: redisAuthName, MountPath: "/account"},
+			corev1.VolumeMount{Name: RedisExporterTempVolumeName, MountPath: "/tmp"},
+		)
+		container.Env = append(container.Env, corev1.EnvVar{Name: "REDIS_PASSWORD_FILE", Value: DefaultPasswordFile})
 	}
 
-	local_host := "127.0.0.1"
-	if rf.Spec.Redis.Expose.IPFamilyPrefer == corev1.IPv6Protocol {
-		local_host = "[::1]"
-	}
 	if rf.Spec.Redis.EnableTLS {
 		container.VolumeMounts = []corev1.VolumeMount{
-			{
-				Name:      RedisTLSVolumeName,
-				MountPath: "/tls",
-			},
+			{Name: RedisTLSVolumeName, MountPath: "/tls"},
 		}
 		container.Env = append(container.Env, []corev1.EnvVar{
 			{
@@ -549,13 +551,13 @@ func createRedisExporterContainer(rf *v1.RedisFailover, opUser *user.User) corev
 			},
 			{
 				Name:  "REDIS_ADDR",
-				Value: fmt.Sprintf("redis://%s:6379", local_host),
+				Value: fmt.Sprintf("rediss://%s:6379", config.LocalInjectName),
 			},
 		}...)
-	} else if rf.Spec.Redis.Expose.IPFamilyPrefer == corev1.IPv6Protocol {
+	} else {
 		container.Env = append(container.Env, []corev1.EnvVar{
 			{Name: "REDIS_ADDR",
-				Value: fmt.Sprintf("redis://%s:6379", local_host)},
+				Value: fmt.Sprintf("redis://%s:6379", config.LocalInjectName)},
 		}...)
 	}
 	return container
@@ -563,13 +565,6 @@ func createRedisExporterContainer(rf *v1.RedisFailover, opUser *user.User) corev
 
 func getRedisCommand(rf *v1.RedisFailover) []string {
 	cmds := []string{"sh", "/opt/run_failover.sh"}
-	if rf.Spec.EnableActiveRedis {
-		cmds = append(cmds, "--loadmodule", "/modules/activeredis.so",
-			"service_id", fmt.Sprintf("%d", *rf.Spec.ServiceID),
-			"service_uid", string(rf.UID),
-			"shard_id", "0",
-		)
-	}
 	return cmds
 }
 
@@ -696,6 +691,17 @@ func getRedisVolumes(inst types.RedisFailoverInstance, rf *v1.RedisFailover, sec
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: secretName,
+				},
+			},
+		})
+	}
+	if rf.Spec.Redis.Exporter.Enabled {
+		volumes = append(volumes, corev1.Volume{
+			Name: RedisExporterTempVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					Medium:    corev1.StorageMediumMemory,
+					SizeLimit: resource.NewQuantity(1<<20, resource.BinarySI), //1Mi
 				},
 			},
 		})
