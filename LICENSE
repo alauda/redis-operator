@@ -1,3 +1,11 @@
+This project uses Redis, which is licensed under the Server Side Public License (SSPL) and Redis Source Available License v2 (RSALv2).
+
+For more information, please refer to:
+- SSPL: https://www.mongodb.com/licensing/server-side-public-license
+- RSALv2: https://redis.io/legal/rsalv2-agreement/
+
+---
+
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
