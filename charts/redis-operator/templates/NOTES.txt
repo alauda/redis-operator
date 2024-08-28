@@ -1,0 +1,66 @@
+1. To deploy Redis instance, apply this template:
+
+---
+apiVersion: middleware.alauda.io/v1
+kind: Redis
+metadata:
+  name: redis-failover
+spec:
+  arch: sentinel
+  customConfig:
+    save: 60 10000 300 100 600 1
+  exporter:
+    enabled: true
+    resources:
+      limits:
+        cpu: 100m
+        memory: 384Mi
+      requests:
+        cpu: 50m
+        memory: 128Mi
+  passwordSecret: redis-password
+  persistent:
+    storageClassName: sc-topolvm
+  persistentSize: 1Gi
+  replicas:
+    sentinel:
+      master: 1
+      slave: 1
+  resources:
+    limits:
+      cpu: 300m
+      memory: 300Mi
+    requests:
+      cpu: 300m
+      memory: 300Mi
+  sentinel:
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+            - key: app.kubernetes.io/component
+              operator: In
+              values:
+              - sentinel
+            - key: redissentinels.databases.spotahome.com/name
+              operator: In
+              values:
+              - redis-failover
+          topologyKey: kubernetes.io/hostname
+    monitorConfig:
+      down-after-milliseconds: "30000"
+      failover-timeout: "180000"
+      parallel-syncs: "1"
+    replicas: 3
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+  version: "6.0"
+---
+
+Wait the Redis Sentinel instance to start up for about 3 minutes.

@@ -1,0 +1,26 @@
+
+---
+{{ if .Capabilities.APIVersions.Has "monitoring.coreos.com/v1/ServiceMonitor" }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    prometheus: kube-prometheus
+    {{- include "redis.labels" . | nindent 4 }}
+  name: {{ include "redis.fullname" . }}-exporter
+spec:
+  endpoints:
+  - bearerTokenSecret:
+      key: ""
+    honorLabels: true
+    interval: 30s
+    path: /metrics
+    port: metrics
+    scrapeTimeout: 10s
+  jobLabel: app.kubernetes.io/component
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+      {{- include "redis.selectorLabels" . | nindent 6 }}
+{{ end }}

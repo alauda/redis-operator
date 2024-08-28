@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    {{- include "redis.labels" . | nindent 4 }}
+  name: {{ include "redis.fullname" . }}-exporter
+spec:
+  ports:
+  - name: health
+    port: 8081
+    protocol: TCP
+    targetPort: 8081
+  selector:
+    {{- include "redis.selectorLabels" . | nindent 8 }}
+  type: ClusterIP
