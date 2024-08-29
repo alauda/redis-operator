@@ -7,7 +7,7 @@ require (
 	github.com/cert-manager/cert-manager v1.9.1
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-logr/logr v1.4.2
-	github.com/gomodule/redigo v1.8.9
+	github.com/gomodule/redigo v1.9.2
 	github.com/onsi/ginkgo/v2 v2.20.2
 	github.com/onsi/gomega v1.34.1
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.57.0
