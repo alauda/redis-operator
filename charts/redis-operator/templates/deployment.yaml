@@ -1,0 +1,144 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "redis.fullname" . }}
+  labels:
+    {{- include "redis.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.redisOperator.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "redis.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "redis.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccount: {{ include "redis.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      restartPolicy: Always
+      containers:
+        - name: redis-operator
+          args: ["--leader-elect"]
+          env:
+          - name: WATCH_NAMESPACE
+            value: "{{ .Values.watchNamespace }}"
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: POD_UID
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.uid
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: DEFAULT_REDIS_IMAGE
+            value: "{{ .Values.images.defaultRedis.repository }}:{{ .Values.images.defaultRedis.tag }}"
+          - name: REDIS_VERSION_6_IMAGE
+            value: "{{ .Values.images.redis6.repository }}:{{ .Values.images.redis6.tag }}"
+          - name: REDIS_VERSION_6_VERSION
+            value: "{{ .Values.images.redis6.tag }}"
+          - name: REDIS_VERSION_7_2_IMAGE
+            value: "{{ .Values.images.redis72.repository }}:{{ .Values.images.redis72.tag }}"
+          - name: REDIS_VERSION_7_2_VERSION
+            value: "{{ .Values.images.redis72.tag }}"
+          - name: DEFAULT_EXPORTER_IMAGE
+            value: "{{ .Values.images.redisExporter.repository }}:{{ .Values.images.redisExporter.tag }}"
+          - name: REDIS_TOOLS_IMAGE
+            value: "{{ .Values.images.redisOperator.repository }}:{{ .Values.images.redisOperator.tag }}"
+          - name: REDIS_OPERATOR_VERSION
+            value: "{{ .Values.redisOperator.tag }}"
+          securityContext:
+            {{- toYaml .Values.redisOperator.securityContext | nindent 12 }}
+          image: "{{ .Values.images.redisOperator.repository }}:{{ .Values.images.redisOperator.tag }}"
+          imagePullPolicy: {{ .Values.redisOperator.imagePullPolicy }}
+          resources:
+            {{- toYaml .Values.redisOperator.resources | nindent 12 }}
+          ports:
+            - name: metrics
+              containerPort: 8080
+              protocol: TCP
+          startupProbe:
+            failureThreshold: 60
+            httpGet:
+              path: /readyz
+              port: 8081
+              scheme: HTTP
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 1
+          readinessProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /readyz
+              port: 8081
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 30
+          livenessProbe:
+            failureThreshold: 30
+            httpGet:
+              path: /healthz
+              port: 8081
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 30
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if empty .Values.affinity }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                - redis-operator
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - {{ include "redis.name" . }}
+            topologyKey: kubernetes.io/hostname
+      {{- else }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}
+
+      {{- if empty .Values.tolerations }}
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      {{- else }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}

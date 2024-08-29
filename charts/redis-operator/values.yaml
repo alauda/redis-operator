@@ -1,0 +1,78 @@
+# Default values for redis.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Operator watch namespace
+watchNamespace: ""
+
+imagePullSecrets: []
+
+images:
+  redisOperator:
+    repository: redis-operator
+    tag: latest
+    digest: ""
+  redis6:
+    repository: redis
+    tag: 6.0
+    digest: "b99ffd0554dc8d300230b9d1b9f2a129a6abf595bf8589883beb980ed1feae3d"
+  redis72:
+    repository: redis
+    tag: 7.2
+    digest: "f65071a370de1370af3fa8cf5f6eda01e42e734bb4e0f0a78e42e736b6a98480"
+  redisExporter:
+    repository: oliver006/redis_exporter
+    tag: v1.62.0
+    digest: "c5a968ba5f30bab5e12181cceb89c4ed37cb4fe4d85490b5b66c7cfe4750b5e8"
+
+redisOperator:
+  replicaCount: 1
+  imagePullPolicy: IfNotPresent
+  resources:
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "redis-operator"
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000

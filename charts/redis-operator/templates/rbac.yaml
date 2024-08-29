@@ -1,8 +1,17 @@
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: {{ include "redis.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "redis.labels" . | nindent 4 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: redis-operator
+  name: {{ .Release.Name }}:redis-operator-role
+  labels:
+    {{- include "redis.labels" . | nindent 4 }}
 rules:
 - apiGroups:
   - '*'
@@ -320,3 +329,18 @@ rules:
   - get
   - patch
   - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Name }}:redis-operator-binding
+  labels:
+    {{- include "redis.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Name }}:redis-operator-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "redis.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
