@@ -36,6 +36,7 @@ jobs:
 
   build:
     name: Build and push Docker image
+    if: "!startsWith(github.head_ref, 'dependabot/')"
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
