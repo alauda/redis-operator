@@ -529,9 +529,9 @@ fi
 	}
 
 	if rf.Spec.Redis.EnableTLS {
-		container.VolumeMounts = []corev1.VolumeMount{
-			{Name: RedisTLSVolumeName, MountPath: "/tls"},
-		}
+		container.VolumeMounts = append(container.VolumeMounts,
+			corev1.VolumeMount{Name: RedisTLSVolumeName, MountPath: "/tls"},
+		)
 		container.Env = append(container.Env, []corev1.EnvVar{
 			{
 				Name:  "REDIS_EXPORTER_TLS_CLIENT_KEY_FILE",
