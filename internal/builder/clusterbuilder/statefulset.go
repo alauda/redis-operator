@@ -333,14 +333,6 @@ func persistentClaim(cluster *redisv1alpha1.DistributedRedisCluster, labels map[
 func redisServerContainer(cluster *redisv1alpha1.DistributedRedisCluster, u *user.User, envs []corev1.EnvVar, index int) corev1.Container {
 	shutdownArgs := []string{"sh", "-c", "/opt/redis-tools cluster shutdown  &> /proc/1/fd/1"}
 	startArgs := []string{"sh", "/opt/run.sh"}
-	if cluster.Spec.EnableActiveRedis {
-		startArgs = append(startArgs,
-			"--loadmodule", "/modules/activeredis.so",
-			"service_id", fmt.Sprintf("%d", *cluster.Spec.ServiceID),
-			"service_uid", string(cluster.UID),
-			"shard_id", fmt.Sprintf("%d", index),
-		)
-	}
 
 	container := corev1.Container{
 		Env:             envs,
