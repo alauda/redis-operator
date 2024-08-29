@@ -17,16 +17,16 @@ images:
     digest: ""
   redis6:
     repository: redis
-    tag: 6.0.20
+    tag: 6.0
     digest: "b99ffd0554dc8d300230b9d1b9f2a129a6abf595bf8589883beb980ed1feae3d"
   redis72:
     repository: redis
-    tag: 7.2.5
+    tag: 7.2
     digest: "f65071a370de1370af3fa8cf5f6eda01e42e734bb4e0f0a78e42e736b6a98480"
   redisExporter:
     repository: oliver006/redis_exporter
-    tag: v1.35.1
-    digest: ""
+    tag: v1.62.0
+    digest: "c5a968ba5f30bab5e12181cceb89c4ed37cb4fe4d85490b5b66c7cfe4750b5e8"
 
 redisOperator:
   replicaCount: 1
