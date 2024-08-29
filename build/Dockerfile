@@ -28,7 +28,7 @@ COPY Makefile Makefile
 # Dependencies are cached unless we change go.mod or go.sum
 COPY go.mod go.mod
 COPY go.sum go.sum
-RUN GOPROXY=https://goproxy.cn,direct go mod download
+RUN go mod download
 
 RUN CGO_ENABLED=0 go build -a -tags timetzdata -buildmode=pie -ldflags '-extldflags "-Wl,-z,relro,-z,now"' -a -o manager cmd/main.go 
 RUN CGO_ENABLED=0 go build -a -tags timetzdata -buildmode=pie -ldflags '-extldflags "-Wl,-z,relro,-z,now"' -a -o redis-tools cmd/redis-tools/main.go
