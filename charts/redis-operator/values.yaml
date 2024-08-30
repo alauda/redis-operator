@@ -12,9 +12,9 @@ imagePullSecrets: []
 
 images:
   redisOperator:
-    repository: redis-operator
+    repository: alaudaos/redis-operator
     tag: latest
-    digest: ""
+    digest: "c6fffd56a8ac0411c9461891062070d1321a65f1cfa5172b1a50a9bc34a9d6a5"
   redis6:
     repository: redis
     tag: 6.0
