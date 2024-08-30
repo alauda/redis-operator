@@ -30,7 +30,7 @@ jobs:
     - name: Docker Login
       uses: docker/login-action@v3
       with:
-        username: ${{ secrets.DOCKER_USERNAME }}
+        username: ${{ vars.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_TOKEN }}
 
     - name: GitHub Login
@@ -47,6 +47,6 @@ jobs:
         context: .
         push: true
         tags: |
-          ${{ secret.DOCKER_USERNAME }}/redis-operator:${{ env.TAG }}
+          ${{ vars.DOCKER_USERNAME }}/redis-operator:${{ env.TAG }}
           ghcr.io/alauda/redis-operator:${{ env.TAG }}
         platforms: linux/amd64,linux/arm64
