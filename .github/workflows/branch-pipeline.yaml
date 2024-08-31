@@ -94,4 +94,36 @@ jobs:
         tags: |
           ${{ vars.DOCKER_USERNAME }}/redis-operator:${{ env.TAG_NAME }}
           ghcr.io/${{ github.repository_owner }}/redis-operator:${{ env.TAG_NAME }}
-        platforms: linux/amd64,linux/arm64
+        platforms: linux/amd64
+
+    - name: Update chart
+      if: github.ref == 'refs/heads/main'
+      uses: mikefarah/yq@master
+
+    - name: Commit Changes
+      if: github.ref == 'refs/heads/main'
+      run: |
+        keys=$(yq e '.images | keys | .[]' charts/redis-operator/values.yaml)
+
+        while IFS= read -r key; do
+          repository=$(yq e ".images.$key.repository" charts/redis-operator/values.yaml)
+          tag=$(yq e ".images.$key.tag" charts/redis-operator/values.yaml)
+          digest=$(docker buildx imagetools inspect "$repository:$tag" --format 'd-{{.Manifest.Digest}}' | awk -F: '{print $2}')
+          yq e ".images.$key.digest = \"$digest\"" -i charts/redis-operator/values.yaml
+          echo "Updated $repository:$tag with digest $digest"
+        done <<< "$keys"
+
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+        git diff charts
+
+        # check if there are changes to commit
+        if git diff charts --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+        git add charts
+        git commit -m "Automated commit message [skip ci]"
+        git push
+
