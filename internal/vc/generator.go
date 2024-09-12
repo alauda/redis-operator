@@ -65,6 +65,9 @@ func GetImageNameAndTagFromEnv(name string) (string, string, error) {
 }
 
 func appendComponentVersion(comp *vc.Component, imagetag, version, displayVersion string) error {
+	if imagetag == "" {
+		return nil
+	}
 	if image, tag, err := ParseImageAndTag(imagetag); err != nil {
 		return err
 	} else {
@@ -91,11 +94,8 @@ func appendComponentVersion(comp *vc.Component, imagetag, version, displayVersio
 func GenerateOldImageVersion(ctx context.Context, cli client.Client, namespace string, logger logr.Logger) (*vc.ImageVersion, error) {
 	var (
 		operatorVersion string
-		listOptions     = client.ListOptions{
-			Namespace: namespace,
-			Limit:     16,
-		}
-		comps = map[string]*vc.Component{
+		listOptions     = client.ListOptions{Namespace: namespace, Limit: 16}
+		comps           = map[string]*vc.Component{
 			"redis":          {CoreComponent: true},
 			"activeredis":    {},
 			"redis-exporter": {},
@@ -109,8 +109,8 @@ func GenerateOldImageVersion(ctx context.Context, cli client.Client, namespace s
 	for {
 		var ret middlewarev1.RedisList
 		if err := cli.List(ctx, &ret, &listOptions); err != nil {
-			logger.Error(err, "failed to list redisfailover")
-			return nil, fmt.Errorf("failed to list redisfailover: %w", err)
+			logger.Error(err, "failed to list redis")
+			return nil, fmt.Errorf("failed to list redis: %w", err)
 		}
 
 		for _, obj := range ret.Items {
@@ -138,6 +138,9 @@ func GenerateOldImageVersion(ctx context.Context, cli client.Client, namespace s
 				var inst databasesv1.RedisFailover
 				if err := cli.Get(ctx, client.ObjectKeyFromObject(item), &inst); err != nil {
 					logger.Error(err, "failed to get redisfailover", "redisfailover", client.ObjectKeyFromObject(item))
+					if !errors.IsNotFound(err) {
+						return nil, fmt.Errorf("failed to get redisfailover: %w", err)
+					}
 					continue
 				}
 
@@ -160,6 +163,9 @@ func GenerateOldImageVersion(ctx context.Context, cli client.Client, namespace s
 				var inst clusterv1alpha1.DistributedRedisCluster
 				if err := cli.Get(ctx, client.ObjectKeyFromObject(item), &inst); err != nil {
 					logger.Error(err, "failed to get rediscluster", "rediscluster", client.ObjectKeyFromObject(item))
+					if !errors.IsNotFound(err) {
+						return nil, fmt.Errorf("failed to get rediscluster: %w", err)
+					}
 					continue
 				}
 
@@ -183,11 +189,11 @@ func GenerateOldImageVersion(ctx context.Context, cli client.Client, namespace s
 			if stsName != "" {
 				// get statefulset of redisfailover
 				var sts appv1.StatefulSet
-				if err := cli.Get(ctx, client.ObjectKey{
-					Namespace: item.Namespace,
-					Name:      stsName,
-				}, &sts); err != nil {
+				if err := cli.Get(ctx, client.ObjectKey{Namespace: item.Namespace, Name: stsName}, &sts); err != nil {
 					logger.Error(err, "failed to list statefulset", "instance", client.ObjectKeyFromObject(item))
+					if !errors.IsNotFound(err) {
+						return nil, fmt.Errorf("failed to list statefulset: %w", err)
+					}
 					continue
 				}
 				for _, container := range append(append([]corev1.Container{}, sts.Spec.Template.Spec.InitContainers...), sts.Spec.Template.Spec.Containers...) {
