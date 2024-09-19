@@ -515,9 +515,7 @@ fi
 				corev1.ResourceMemory: resource.MustParse("100Mi"),
 			},
 		},
-		SecurityContext: &corev1.SecurityContext{
-			ReadOnlyRootFilesystem: pointer.Bool(true),
-		},
+		SecurityContext: builder.GetSecurityContext(rf.Spec.Redis.SecurityContext),
 	}
 
 	if secret != "" {

@@ -143,10 +143,8 @@ func NewSentinelStatefulset(sen types.RedisSentinelInstance, selectors map[strin
 									},
 								},
 							},
-							SecurityContext: &corev1.SecurityContext{
-								ReadOnlyRootFilesystem: pointer.Bool(true),
-							},
-							VolumeMounts: volumeMounts,
+							SecurityContext: builder.GetSecurityContext(inst.Spec.SecurityContext),
+							VolumeMounts:    volumeMounts,
 						},
 					},
 					ImagePullSecrets:              inst.Spec.ImagePullSecrets,
