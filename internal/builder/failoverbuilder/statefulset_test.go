@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	v1 "github.com/alauda/redis-operator/api/databases/v1"
+	"github.com/alauda/redis-operator/internal/builder"
 	"github.com/alauda/redis-operator/pkg/types/user"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -78,13 +79,7 @@ func TestCreateRedisExporterContainer(t *testing.T) {
 						corev1.ResourceMemory: resource.MustParse("100Mi"),
 					},
 				},
-				SecurityContext: &corev1.SecurityContext{
-					ReadOnlyRootFilesystem: pointer.Bool(true),
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					{Name: redisAuthName, MountPath: "/account"},
-					{Name: RedisExporterTempVolumeName, MountPath: "/tmp"},
-				},
+				SecurityContext: builder.GetSecurityContext(nil),
 			},
 		},
 		{
@@ -134,14 +129,10 @@ func TestCreateRedisExporterContainer(t *testing.T) {
 						corev1.ResourceMemory: resource.MustParse("100Mi"),
 					},
 				},
-				SecurityContext: &corev1.SecurityContext{
-					ReadOnlyRootFilesystem: pointer.Bool(true),
-				},
 				VolumeMounts: []corev1.VolumeMount{
-					{Name: redisAuthName, MountPath: "/account"},
-					{Name: RedisExporterTempVolumeName, MountPath: "/tmp"},
 					{Name: RedisTLSVolumeName, MountPath: "/tls"},
 				},
+				SecurityContext: builder.GetSecurityContext(nil),
 			},
 		},
 	}
