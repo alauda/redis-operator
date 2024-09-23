@@ -37,9 +37,11 @@ import (
 )
 
 var (
-	ErrNoMaster       = fmt.Errorf("no master")
-	ErrMultipleMaster = fmt.Errorf("multiple master without majority agreement")
-	ErrNotEnoughNodes = fmt.Errorf("not enough sentinel nodes")
+	ErrNoMaster        = fmt.Errorf("no master")
+	ErrDoFailover      = fmt.Errorf("redis sentinel doing failover")
+	ErrMultipleMaster  = fmt.Errorf("multiple master without majority agreement")
+	ErrAddressConflict = fmt.Errorf("master address conflict")
+	ErrNotEnoughNodes  = fmt.Errorf("not enough sentinel nodes")
 )
 
 var _ types.FailoverMonitor = (*SentinelMonitor)(nil)
@@ -153,6 +155,13 @@ func (s *SentinelMonitor) Master(ctx context.Context) (*rediscli.SentinelMonitor
 		if err != nil {
 			// NOTE: here ignored any error, for the node may be offline forever
 			s.logger.Error(err, "check monitor status of sentinel failed", "addr", node.addr)
+			s.logger.Error(err, "check monitoring master status of sentinel failed", "addr", node.addr)
+			continue
+		} else if n.IsFailovering() {
+			s.logger.Error(ErrDoFailover, "redis sentinel is doing failover", "node", n.Address())
+			return nil, ErrDoFailover
+		} else if !IsMonitoringNodeOnline(n) {
+			s.logger.Error(fmt.Errorf("master node offline"), "master node offline", "node", n.Address())
 			continue
 		}
 		registeredNodes += 1
@@ -239,18 +248,21 @@ func (s *SentinelMonitor) AllNodeMonitored(ctx context.Context) (bool, error) {
 	var (
 		registeredNodes = map[string]struct{}{}
 		masters         = map[string]int{}
+		mastersOffline  []string
 	)
 	for _, node := range s.nodes {
 		if master, err := node.MonitoringMaster(ctx, s.groupName); err != nil {
 			if err == ErrNoMaster {
 				return false, nil
 			}
+		} else if master.IsFailovering() {
+			return false, ErrDoFailover
 		} else if IsMonitoringNodeOnline(master) {
 			registeredNodes[master.Address()] = struct{}{}
 			masters[master.Address()] += 1
 		} else {
-			s.logger.Error(fmt.Errorf("master node offline"), "master node offline", "node", master.Address())
-			return false, nil
+			mastersOffline = append(mastersOffline, master.Address())
+			continue
 		}
 
 		if replicas, err := node.MonitoringReplicas(ctx, s.groupName); err != nil {
@@ -265,6 +277,11 @@ func (s *SentinelMonitor) AllNodeMonitored(ctx context.Context) (bool, error) {
 			}
 		}
 	}
+	if len(mastersOffline) > 0 {
+		s.logger.Error(fmt.Errorf("not all nodes monitored"), "master nodes offline", "nodes", mastersOffline)
+		return false, nil
+	}
+
 	for _, node := range s.failover.Nodes() {
 		if !node.IsReady() {
 			s.logger.Info("node not ready, ignored", "node", node.GetName())

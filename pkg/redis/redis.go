@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -98,6 +99,7 @@ type SentinelMonitorNode struct {
 	Flags                 string `json:"flags"`
 	LinkPendingCommands   int32  `json:"link_pending_commands"`
 	LinkRefcount          int32  `json:"link_refcount"`
+	FailoverState         string `json:"failover_state"`
 	LastPingSent          int64  `json:"last_ping_sent"`
 	LastOkPingReply       int64  `json:"last_ok_ping_reply"`
 	LastPingReply         int64  `json:"last_ping_reply"`
@@ -139,7 +141,14 @@ func (s *SentinelMonitorNode) IsMaster() bool {
 	if s == nil {
 		return false
 	}
-	return s.Flags == "master"
+	return strings.Contains(s.Flags, "master") && !strings.Contains(s.Flags, "down")
+}
+
+func (s *SentinelMonitorNode) IsFailovering() bool {
+	if s == nil {
+		return false
+	}
+	return slices.Contains(strings.Split(s.Flags, ","), "failover_in_progress")
 }
 
 const (
@@ -534,6 +543,8 @@ func ParseSentinelMonitorNode(val interface{}) *SentinelMonitorNode {
 		case "link-refcount":
 			iv, _ := strconv.ParseInt(v, 10, 32)
 			node.LinkRefcount = int32(iv)
+		case "failover_state":
+			node.FailoverState = v
 		case "last-ping-sent":
 			iv, _ := strconv.ParseInt(v, 10, 64)
 			node.LastPingSent = iv
