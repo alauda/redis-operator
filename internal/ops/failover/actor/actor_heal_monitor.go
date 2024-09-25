@@ -101,6 +101,8 @@ func (a *actorHealMaster) Do(ctx context.Context, val types.RedisInstance) *acto
 					onlineNodeCount += 1
 				}
 			}
+			logger.Error(err, "multi masters found, sentinel split brain")
+			return actor.RequeueWithError(err)
 		} else if !errors.Is(err, monitor.ErrNoMaster) &&
 			!errors.Is(err, monitor.ErrAddressConflict) {
 			logger.Error(err, "failed to get master node")

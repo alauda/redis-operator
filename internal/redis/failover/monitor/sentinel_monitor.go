@@ -148,6 +148,7 @@ func (s *SentinelMonitor) Master(ctx context.Context, flags ...bool) (*rediscli.
 	}
 	var (
 		masterStat      []*Stat
+		masterIds       = map[string]int{}
 		registeredNodes int
 	)
 	for _, node := range s.nodes {
@@ -179,6 +180,9 @@ func (s *SentinelMonitor) Master(ctx context.Context, flags ...bool) (*rediscli.
 			return false
 		}); i < 0 {
 			masterStat = append(masterStat, &Stat{Node: n, Count: 1})
+		}
+		if n.RunId != "" {
+			masterIds[n.RunId] += 1
 		}
 	}
 	if len(masterStat) == 0 {
@@ -265,6 +269,7 @@ func (s *SentinelMonitor) AllNodeMonitored(ctx context.Context) (bool, error) {
 	var (
 		registeredNodes = map[string]struct{}{}
 		masters         = map[string]int{}
+		masterIds       = map[string]int{}
 		mastersOffline  []string
 	)
 	for _, node := range s.nodes {
@@ -277,6 +282,9 @@ func (s *SentinelMonitor) AllNodeMonitored(ctx context.Context) (bool, error) {
 		} else if IsMonitoringNodeOnline(master) {
 			registeredNodes[master.Address()] = struct{}{}
 			masters[master.Address()] += 1
+			if master.RunId != "" {
+				masterIds[master.RunId] += 1
+			}
 		} else {
 			mastersOffline = append(mastersOffline, master.Address())
 			continue
@@ -312,7 +320,11 @@ func (s *SentinelMonitor) AllNodeMonitored(ctx context.Context) (bool, error) {
 			return false, nil
 		}
 	}
+
 	if len(masters) > 1 {
+		if len(masterIds) == 1 {
+			return false, ErrAddressConflict
+		}
 		return false, ErrMultipleMaster
 	}
 	return true, nil
