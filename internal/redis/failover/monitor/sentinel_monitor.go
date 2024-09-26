@@ -195,6 +195,11 @@ func (s *SentinelMonitor) Master(ctx context.Context, flags ...bool) (*rediscli.
 		return 1
 	})
 
+	if len(masterStat) > 1 {
+		if len(masterIds) == 1 {
+			return nil, ErrAddressConflict
+		}
+	}
 	if masterStat[0].Count >= 1+len(s.nodes)/2 || masterStat[0].Count == registeredNodes {
 		return masterStat[0].Node, nil
 	}
