@@ -91,7 +91,7 @@ func (a *actorHealMaster) Do(ctx context.Context, val types.RedisInstance) *acto
 	if err != nil {
 		if errors.Is(err, monitor.ErrMultipleMaster) {
 			// TODO: try fix multiple master
-			monitorMaster, _ := instMonitor.Master(ctx, true)
+			monitorMaster, _ = instMonitor.Master(ctx, true)
 			if monitorMaster == nil {
 				logger.Error(err, "multi masters found, sentinel split brain")
 				return actor.RequeueWithError(err)
