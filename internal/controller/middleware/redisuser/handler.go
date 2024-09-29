@@ -213,14 +213,20 @@ func (r *RedisUserHandler) Do(ctx context.Context, inst ruv1.RedisUser, logger l
 			return err
 		}
 		configmap.Data[inst.Spec.Username] = string(info)
-		for _, node := range rcm.Nodes() {
-			_, err := node.SetACLUser(ctx, inst.Spec.Username, passwords, aclRules)
-			if err != nil {
-				logger.Error(err, "acl set user failed", "node", node.GetName())
-				return err
+
+		if inst.Spec.AccountType != ruv1.System {
+			for _, node := range rcm.Nodes() {
+				_, err := node.SetACLUser(ctx, inst.Spec.Username, passwords, aclRules)
+				if err != nil {
+					logger.Error(err, "acl set user failed", "node", node.GetName())
+					return err
+				}
+				logger.V(3).Info("acl set user success", "node", node.GetName())
 			}
-			logger.V(3).Info("acl set user success", "node", node.GetName())
+		} else {
+			logger.V(3).Info("skip system account online update", "username", inst.Spec.Username)
 		}
+
 		if err := r.k8sClient.UpdateConfigMap(ctx, inst.Namespace, configmap); err != nil {
 			logger.Error(err, "update configmap failed", "configmap", configmap.Name)
 			return err
@@ -252,14 +258,20 @@ func (r *RedisUserHandler) Do(ctx context.Context, inst ruv1.RedisUser, logger l
 			return err
 		}
 		configmap.Data[inst.Spec.Username] = string(info)
-		for _, node := range rfm.Nodes() {
-			_, err := node.SetACLUser(ctx, inst.Spec.Username, passwords, inst.Spec.AclRules)
-			if err != nil {
-				logger.Error(err, "acl set user failed", "node", node.GetName())
-				return err
+
+		if inst.Spec.AccountType != ruv1.System {
+			for _, node := range rfm.Nodes() {
+				_, err := node.SetACLUser(ctx, inst.Spec.Username, passwords, inst.Spec.AclRules)
+				if err != nil {
+					logger.Error(err, "acl set user failed", "node", node.GetName())
+					return err
+				}
+				logger.V(3).Info("acl set user success", "node", node.GetName())
 			}
-			logger.V(3).Info("acl set user success", "node", node.GetName())
+		} else {
+			logger.V(3).Info("skip system account online update", "username", inst.Spec.Username)
 		}
+
 		if err := r.k8sClient.UpdateConfigMap(ctx, inst.Namespace, configmap); err != nil {
 			logger.Error(err, "update configmap failed", "configmap", configmap.Name)
 			return err

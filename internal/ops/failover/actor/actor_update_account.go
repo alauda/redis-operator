@@ -333,6 +333,7 @@ func (a *actorUpdateAccount) Do(ctx context.Context, val types.RedisInstance) *a
 		data := users.Encode(true)
 		err := a.client.CreateOrUpdateConfigMap(ctx, inst.GetNamespace(), failoverbuilder.NewFailoverAclConfigMap(inst.Definition(), data))
 		if err != nil {
+			logger.Error(err, "update acl configmap failed")
 			return actor.NewResultWithError(sentinel.CommandRequeue, err)
 		}
 		inst.SendEventf(corev1.EventTypeNormal, config.EventUpdatePassword, "updated instance password")
