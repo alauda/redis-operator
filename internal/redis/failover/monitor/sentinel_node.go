@@ -26,6 +26,7 @@ import (
 
 	"github.com/alauda/redis-operator/pkg/redis"
 	rediscli "github.com/alauda/redis-operator/pkg/redis"
+	rtypes "github.com/alauda/redis-operator/pkg/types/redis"
 )
 
 func NewSentinelNode(ctx context.Context, addr, username, password string, tlsConf *tls.Config) (*SentinelNode, error) {
@@ -40,12 +41,23 @@ func NewSentinelNode(ctx context.Context, addr, username, password string, tlsCo
 	if err := client.Ping(ctx); err != nil {
 		return nil, err
 	}
-	return &SentinelNode{addr: addr, client: client}, nil
+	info, err := client.Info(ctx, "server")
+	if err != nil {
+		return nil, err
+	}
+	version, _ := rtypes.ParseRedisVersion(info.RedisVersion)
+
+	return &SentinelNode{addr: addr, client: client, version: version}, nil
 }
 
 type SentinelNode struct {
-	addr   string
-	client rediscli.RedisClient
+	addr    string
+	client  rediscli.RedisClient
+	version rtypes.RedisVersion
+}
+
+func (sn *SentinelNode) Version() rtypes.RedisVersion {
+	return sn.version
 }
 
 func (sn *SentinelNode) MonitoringMaster(ctx context.Context, name string) (*rediscli.SentinelMonitorNode, error) {

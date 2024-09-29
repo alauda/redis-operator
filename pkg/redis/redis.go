@@ -178,7 +178,7 @@ type RedisClient interface {
 	Clone(ctx context.Context, addr string) RedisClient
 
 	Ping(ctx context.Context) error
-	Info(ctx context.Context) (*RedisInfo, error)
+	Info(ctx context.Context, sections ...any) (*RedisInfo, error)
 	ClusterInfo(ctx context.Context) (*RedisClusterInfo, error)
 	ConfigGet(ctx context.Context, cate string) (map[string]string, error)
 	ConfigSet(ctx context.Context, params map[string]string) error
@@ -423,12 +423,15 @@ func (c *redisClient) ConfigSet(ctx context.Context, params map[string]string) e
 }
 
 // Info
-func (c *redisClient) Info(ctx context.Context) (*RedisInfo, error) {
+func (c *redisClient) Info(ctx context.Context, sections ...any) (*RedisInfo, error) {
 	if c == nil || c.pool == nil {
 		return nil, nil
 	}
 
-	data, err := redis.String(c.DoWithTimeout(ctx, time.Second*10, "INFO"))
+	conn := c.pool.Get()
+	defer conn.Close()
+
+	data, err := redis.String(redis.DoContext(conn, ctx, "INFO", sections...))
 	if err != nil {
 		return nil, err
 	}

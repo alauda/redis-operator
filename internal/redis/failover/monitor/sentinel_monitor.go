@@ -161,7 +161,7 @@ func (s *SentinelMonitor) Master(ctx context.Context) (*rediscli.SentinelMonitor
 			s.logger.Error(ErrDoFailover, "redis sentinel is doing failover", "node", n.Address())
 			return nil, ErrDoFailover
 		} else if !IsMonitoringNodeOnline(n) {
-			s.logger.Error(fmt.Errorf("master node offline"), "master node offline", "node", n.Address())
+			s.logger.Error(fmt.Errorf("master node offline"), "master node offline", "node", n.Address(), "flags", n.Flags)
 			continue
 		}
 		registeredNodes += 1
@@ -392,11 +392,24 @@ func (s *SentinelMonitor) Monitor(ctx context.Context, masterNode redis.RedisNod
 		configs[k] = v
 	}
 
-	opUser := s.failover.Users().GetOpUser()
-	configs["auth-pass"] = opUser.Password.String()
-	if s.failover.Version().IsACLSupported() {
+	isAllAclSupported := func() bool {
+		for _, node := range s.nodes {
+			if !node.Version().IsACLSupported() {
+				return false
+			}
+		}
+		return true
+	}()
+
+	if s.failover.Version().IsACLSupported() && s.failover.IsACLAppliedToAll() && isAllAclSupported {
+		opUser := s.failover.Users().GetOpUser()
+		configs["auth-pass"] = opUser.Password.String()
 		configs["auth-user"] = opUser.Name
+	} else {
+		user := s.failover.Users().GetDefaultUser()
+		configs["auth-pass"] = user.Password.String()
 	}
+
 	masterIP, masterPort := masterNode.DefaultIP().String(), strconv.Itoa(masterNode.Port())
 	for _, node := range s.nodes {
 		if master, err := node.MonitoringMaster(ctx, s.groupName); err == ErrNoMaster ||
