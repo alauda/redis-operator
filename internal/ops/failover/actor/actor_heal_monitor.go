@@ -289,7 +289,10 @@ func (a *actorHealMaster) Do(ctx context.Context, val types.RedisInstance) *acto
 				}
 
 				bindedMasterAddr := net.JoinHostPort(node.ConfigedMasterIP(), node.ConfigedMasterPort())
-				if bindedMasterAddr == masterAddr && node.IsMasterLinkUp() {
+				if bindedMasterAddr == masterAddr && node.IsMasterLinkUp() ||
+					// check if they are connect to the same nodeport
+					(node.ConfigedMasterPort() != "" && node.ConfigedMasterPort() != "6379" &&
+						node.ConfigedMasterPort() == monitorMaster.Port) {
 					continue
 				}
 
