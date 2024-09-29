@@ -119,7 +119,7 @@ type RedisSentinelInstance interface {
 
 type FailoverMonitor interface {
 	Policy() databasesv1.FailoverPolicy
-	Master(ctx context.Context) (*redis.SentinelMonitorNode, error)
+	Master(ctx context.Context, flags ...bool) (*redis.SentinelMonitorNode, error)
 	Replicas(ctx context.Context) ([]*redis.SentinelMonitorNode, error)
 	Inited(ctx context.Context) (bool, error)
 	AllNodeMonitored(ctx context.Context) (bool, error)

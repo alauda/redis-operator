@@ -91,9 +91,18 @@ func (a *actorHealMaster) Do(ctx context.Context, val types.RedisInstance) *acto
 	if err != nil {
 		if errors.Is(err, monitor.ErrMultipleMaster) {
 			// TODO: try fix multiple master
-			logger.Error(err, "multi masters found, sentinel split brain")
-			return actor.RequeueWithError(err)
-		} else if !errors.Is(err, monitor.ErrNoMaster) {
+			monitorMaster, _ := instMonitor.Master(ctx, true)
+			if monitorMaster == nil {
+				logger.Error(err, "multi masters found, sentinel split brain")
+				return actor.RequeueWithError(err)
+			} else {
+				monitoringNodes[monitorMaster.Address()] = struct{}{}
+				if monitor.IsMonitoringNodeOnline(monitorMaster) {
+					onlineNodeCount += 1
+				}
+			}
+		} else if !errors.Is(err, monitor.ErrNoMaster) &&
+			!errors.Is(err, monitor.ErrAddressConflict) {
 			logger.Error(err, "failed to get master node")
 			return actor.RequeueWithError(err)
 		}
@@ -131,7 +140,9 @@ func (a *actorHealMaster) Do(ctx context.Context, val types.RedisInstance) *acto
 		if ok || ok2 {
 			registeredNodeCount++
 		}
-		if monitorMaster != nil && (monitorMaster.Address() == addr || monitorMaster.Address() == addr2) {
+		if monitorMaster != nil &&
+			(monitorMaster.Address() == addr || monitorMaster.Address() == addr2 ||
+				(monitorMaster.Port != "6379" && monitorMaster.Port == strconv.Itoa(node.Port()))) {
 			masterCandidate = node
 		}
 	}

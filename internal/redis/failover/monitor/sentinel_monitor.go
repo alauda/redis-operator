@@ -138,7 +138,7 @@ func (s *SentinelMonitor) Policy() databasesv1.FailoverPolicy {
 	return databasesv1.SentinelFailoverPolicy
 }
 
-func (s *SentinelMonitor) Master(ctx context.Context) (*rediscli.SentinelMonitorNode, error) {
+func (s *SentinelMonitor) Master(ctx context.Context, flags ...bool) (*rediscli.SentinelMonitorNode, error) {
 	if s == nil {
 		return nil, nil
 	}
@@ -153,10 +153,14 @@ func (s *SentinelMonitor) Master(ctx context.Context) (*rediscli.SentinelMonitor
 	for _, node := range s.nodes {
 		n, err := node.MonitoringMaster(ctx, s.groupName)
 		if err != nil {
+			if err == ErrNoMaster || strings.Contains(err.Error(), "no such host") {
+				s.logger.Error(err, "master not registered", "addr", node.addr)
+				continue
+			}
 			// NOTE: here ignored any error, for the node may be offline forever
 			s.logger.Error(err, "check monitor status of sentinel failed", "addr", node.addr)
 			s.logger.Error(err, "check monitoring master status of sentinel failed", "addr", node.addr)
-			continue
+			return nil, err
 		} else if n.IsFailovering() {
 			s.logger.Error(ErrDoFailover, "redis sentinel is doing failover", "node", n.Address())
 			return nil, ErrDoFailover
@@ -189,6 +193,19 @@ func (s *SentinelMonitor) Master(ctx context.Context) (*rediscli.SentinelMonitor
 
 	if masterStat[0].Count >= 1+len(s.nodes)/2 || masterStat[0].Count == registeredNodes {
 		return masterStat[0].Node, nil
+	}
+
+	if len(flags) > 0 && flags[0] {
+		// NOTE: force to return the master node with the oldest role reported time
+		stat := masterStat[0]
+		for _, ms := range masterStat {
+			if ms.Node.RoleReportedTime > stat.Node.RoleReportedTime {
+				stat = ms
+			}
+		}
+		if stat.Count >= len(s.nodes)/2 {
+			return stat.Node, nil
+		}
 	}
 	return nil, ErrMultipleMaster
 }
