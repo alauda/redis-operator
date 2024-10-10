@@ -53,6 +53,10 @@ spec:
                 fieldPath: status.podIP
           - name: DEFAULT_REDIS_IMAGE
             value: "{{ .Values.images.defaultRedis.repository }}:{{ .Values.images.defaultRedis.tag }}"
+          - name: REDIS_VERSION_5_IMAGE
+            value: "{{ .Values.images.redis5.repository }}:{{ .Values.images.redis5.tag }}"
+          - name: REDIS_VERSION_5_VERSION
+            value: "{{ .Values.images.redis5.tag }}"
           - name: REDIS_VERSION_6_IMAGE
             value: "{{ .Values.images.redis6.repository }}:{{ .Values.images.redis6.tag }}"
           - name: REDIS_VERSION_6_VERSION
@@ -66,7 +70,7 @@ spec:
           - name: REDIS_TOOLS_IMAGE
             value: "{{ .Values.images.redisOperator.repository }}:{{ .Values.images.redisOperator.tag }}"
           - name: REDIS_OPERATOR_VERSION
-            value: "{{ .Values.redisOperator.tag }}"
+            value: "{{ .Values.redisOperator.version }}"
           securityContext:
             {{- toYaml .Values.redisOperator.securityContext | nindent 12 }}
           image: "{{ .Values.images.redisOperator.repository }}:{{ .Values.images.redisOperator.tag }}"

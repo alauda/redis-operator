@@ -38,6 +38,7 @@ import (
 	_ "github.com/alauda/redis-operator/internal/ops/failover/actor"
 	_ "github.com/alauda/redis-operator/internal/ops/sentinel/actor"
 	"github.com/alauda/redis-operator/internal/vc"
+	vcv1 "github.com/alauda/redis-operator/internal/vc/v1"
 	"github.com/alauda/redis-operator/pkg/actor"
 	"github.com/alauda/redis-operator/pkg/kubernetes/clientset"
 
@@ -72,6 +73,7 @@ func init() {
 	utilruntime.Must(databasesv1.AddToScheme(scheme))
 	utilruntime.Must(middlewarev1.AddToScheme(scheme))
 	utilruntime.Must(middlewareredisv1.AddToScheme(scheme))
+	utilruntime.Must(vcv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
