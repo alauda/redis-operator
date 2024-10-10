@@ -14,7 +14,16 @@ images:
   redisOperator:
     repository: alaudaos/redis-operator
     tag: latest
+    version: "3.18.0"
     digest: "c6fffd56a8ac0411c9461891062070d1321a65f1cfa5172b1a50a9bc34a9d6a5"
+  defaultRedis:
+    repository: redis
+    tag: 6.0
+    digest: "b99ffd0554dc8d300230b9d1b9f2a129a6abf595bf8589883beb980ed1feae3d"
+  redis5:
+    repository: redis
+    tag: 5.0
+    digest: "fc5ecd863862f89f04334b7cbb57e93c9790478ea8188a49f6e57b0967d38c75"
   redis6:
     repository: redis
     tag: 6.0
