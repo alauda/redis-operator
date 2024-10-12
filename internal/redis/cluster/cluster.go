@@ -31,7 +31,6 @@ import (
 	redismiddlewarealaudaiov1 "github.com/alauda/redis-operator/api/middleware/redis/v1"
 	"github.com/alauda/redis-operator/internal/builder"
 	"github.com/alauda/redis-operator/internal/builder/clusterbuilder"
-	"github.com/alauda/redis-operator/internal/config"
 	"github.com/alauda/redis-operator/internal/util"
 	clientset "github.com/alauda/redis-operator/pkg/kubernetes"
 	"github.com/alauda/redis-operator/pkg/security/acl"
@@ -75,7 +74,7 @@ func NewRedisCluster(ctx context.Context, k8sClient clientset.ClientSet, eventRe
 
 		client:        k8sClient,
 		eventRecorder: eventRecorder,
-		logger:        logger.WithName("C").WithValues("instanec", client.ObjectKeyFromObject(def).String()),
+		logger:        logger.WithName("C").WithValues("instance", client.ObjectKeyFromObject(def).String()),
 	}
 
 	var err error
@@ -758,19 +757,6 @@ func (c *RedisCluster) IsResourceFullfilled(ctx context.Context) (bool, error) {
 		}
 		if sts.Spec.Replicas == nil || *sts.Spec.Replicas != c.Spec.ClusterReplicas+1 {
 			return false, nil
-		}
-		redisToolsImage := config.GetRedisToolsImage(c)
-		if redisToolsImage == "" {
-			return false, fmt.Errorf("redis-tools image not found")
-		}
-		spec := sts.Spec.Template.Spec
-		for _, container := range append(append([]corev1.Container{}, spec.InitContainers...), spec.Containers...) {
-			if !strings.Contains(container.Image, "middleware/redis-tools") {
-				continue
-			}
-			if container.Image != redisToolsImage {
-				return false, nil
-			}
 		}
 	}
 	return true, nil

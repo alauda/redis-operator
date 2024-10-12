@@ -15,7 +15,7 @@ spec:
           - key: redisfailovers.databases.spotahome.com/name
             operator: In
             values:
-            - sttt
+            - redis-standalone
         topologyKey: kubernetes.io/hostname
   arch: standalone
   customConfig:
@@ -116,9 +116,6 @@ spec:
   persistent:
     storageClassName: sc-topolvm
   persistentSize: 1Gi
-  replicas:
-    sentinel:
-      master: 1
   resources:
     limits:
       cpu: 300m
