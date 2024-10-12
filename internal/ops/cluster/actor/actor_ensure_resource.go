@@ -242,7 +242,7 @@ func (a *actorEnsureResource) ensureTLS(ctx context.Context, cluster types.Redis
 		}
 
 		// check when the certificate created
-		if time.Since(oldCert.GetCreationTimestamp().Time) > time.Minute*5 {
+		if oldCert != nil && time.Since(oldCert.GetCreationTimestamp().Time) > time.Minute*5 {
 			return actor.NewResultWithError(cops.CommandAbort, fmt.Errorf("issue for tls certificate failed, please check the cert-manager"))
 		}
 	}
