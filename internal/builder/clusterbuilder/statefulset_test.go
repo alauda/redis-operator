@@ -17,6 +17,7 @@ limitations under the License.
 package clusterbuilder
 
 import (
+	"fmt"
 	"testing"
 
 	redisv1alpha1 "github.com/alauda/redis-operator/api/cluster/v1alpha1"
@@ -63,7 +64,13 @@ func TestRedisExporterContainer(t *testing.T) {
 				},
 			},
 			expected: corev1.Container{
-				Name:            ExporterContainerName,
+				Name: ExporterContainerName,
+				Command: []string{
+					"/redis_exporter",
+					"--web.listen-address",
+					fmt.Sprintf(":%d", PrometheusExporterPortNumber),
+					"--web.telemetry-path",
+					PrometheusExporterTelemetryPath},
 				Image:           "redis-exporter:latest",
 				ImagePullPolicy: corev1.PullAlways,
 				Ports: []corev1.ContainerPort{
@@ -75,10 +82,16 @@ func TestRedisExporterContainer(t *testing.T) {
 				},
 				Env: []corev1.EnvVar{
 					{Name: "ENV_VAR", Value: "value"},
-					{Name: OperatorUsername, Value: "default"},
-					{Name: OperatorSecretName, Value: "secret-name"},
 					{Name: "REDIS_USER", Value: ""},
-					{Name: "REDIS_PASSWORD_FILE", Value: "/tmp/passwords.json"},
+					{Name: PasswordENV, ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							Key: "password",
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "secret-name",
+							},
+						},
+					}},
+
 					{Name: "REDIS_ADDR", Value: "redis://local.inject:6379"},
 				},
 				Resources: corev1.ResourceRequirements{
@@ -90,10 +103,6 @@ func TestRedisExporterContainer(t *testing.T) {
 						corev1.ResourceCPU:    resource.MustParse("200m"),
 						corev1.ResourceMemory: resource.MustParse("200Mi"),
 					},
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					{Name: RedisOperatorPasswordVolumeName, MountPath: OperatorPasswordVolumeMountPath},
-					{Name: RedisExporterTempVolumeName, MountPath: RedisTmpVolumeMountPath},
 				},
 			},
 		},
@@ -127,7 +136,13 @@ func TestRedisExporterContainer(t *testing.T) {
 				},
 			},
 			expected: corev1.Container{
-				Name:            ExporterContainerName,
+				Name: ExporterContainerName,
+				Command: []string{
+					"/redis_exporter",
+					"--web.listen-address",
+					fmt.Sprintf(":%d", PrometheusExporterPortNumber),
+					"--web.telemetry-path",
+					PrometheusExporterTelemetryPath},
 				Image:           "redis-exporter:latest",
 				ImagePullPolicy: corev1.PullAlways,
 				Ports: []corev1.ContainerPort{
@@ -139,10 +154,15 @@ func TestRedisExporterContainer(t *testing.T) {
 				},
 				Env: []corev1.EnvVar{
 					{Name: "ENV_VAR", Value: "value"},
-					{Name: OperatorUsername, Value: "default"},
-					{Name: OperatorSecretName, Value: "secret-name"},
 					{Name: "REDIS_USER", Value: ""},
-					{Name: "REDIS_PASSWORD_FILE", Value: "/tmp/passwords.json"},
+					{Name: PasswordENV, ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							Key: "password",
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "secret-name",
+							},
+						},
+					}},
 					{Name: "REDIS_EXPORTER_TLS_CLIENT_KEY_FILE", Value: "/tls/tls.key"},
 					{Name: "REDIS_EXPORTER_TLS_CLIENT_CERT_FILE", Value: "/tls/tls.crt"},
 					{Name: "REDIS_EXPORTER_TLS_CA_CERT_FILE", Value: "/tls/ca.crt"},
@@ -160,8 +180,6 @@ func TestRedisExporterContainer(t *testing.T) {
 					},
 				},
 				VolumeMounts: []corev1.VolumeMount{
-					{Name: RedisOperatorPasswordVolumeName, MountPath: OperatorPasswordVolumeMountPath},
-					{Name: RedisExporterTempVolumeName, MountPath: RedisTmpVolumeMountPath},
 					{Name: RedisTLSVolumeName, MountPath: TLSVolumeMountPath},
 				},
 			},
@@ -172,6 +190,8 @@ func TestRedisExporterContainer(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			container := redisExporterContainer(tt.cluster, tt.user)
 			assert.Equal(t, tt.expected.Name, container.Name)
+			assert.Equal(t, tt.expected.Command, container.Command)
+			assert.Equal(t, tt.expected.Args, container.Args)
 			assert.Equal(t, tt.expected.Image, container.Image)
 			assert.Equal(t, tt.expected.ImagePullPolicy, container.ImagePullPolicy)
 			assert.Equal(t, tt.expected.Ports, container.Ports)

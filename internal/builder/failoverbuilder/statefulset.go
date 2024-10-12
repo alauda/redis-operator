@@ -46,7 +46,6 @@ const (
 	PasswordENV                  = "REDIS_PASSWORD"
 	redisConfigurationVolumeName = "redis-config"
 	RedisTmpVolumeName           = "redis-tmp"
-	RedisExporterTempVolumeName  = "exporter-temp"
 	RedisTLSVolumeName           = "redis-tls"
 	redisAuthName                = "redis-auth"
 	redisStandaloneVolumeName    = "redis-standalone"
@@ -472,16 +471,9 @@ func createRedisExporterContainer(rf *v1.RedisFailover, opUser *user.User) corev
 		}
 	}
 
-	const DefaultPasswordFile = "/tmp/passwords.json"
-	entrypoint := fmt.Sprintf(`
-if [ -f /account/password ]; then
-    echo "{\"${REDIS_ADDR}\": \"$(cat /account/password)\"}" > %s
-fi
-/redis_exporter`, DefaultPasswordFile)
-
 	container := corev1.Container{
 		Name:            exporterContainerName,
-		Command:         []string{"/bin/sh", "-c", entrypoint},
+		Command:         []string{"/redis_exporter"},
 		Image:           rf.Spec.Redis.Exporter.Image,
 		ImagePullPolicy: builder.GetPullPolicy(rf.Spec.Redis.Exporter.ImagePullPolicy),
 		Env: []corev1.EnvVar{
@@ -519,11 +511,17 @@ fi
 	}
 
 	if secret != "" {
-		container.VolumeMounts = append(container.VolumeMounts,
-			corev1.VolumeMount{Name: redisAuthName, MountPath: "/account"},
-			corev1.VolumeMount{Name: RedisExporterTempVolumeName, MountPath: "/tmp"},
-		)
-		container.Env = append(container.Env, corev1.EnvVar{Name: "REDIS_PASSWORD_FILE", Value: DefaultPasswordFile})
+		container.Env = append(container.Env, corev1.EnvVar{
+			Name: PasswordENV,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					Key: "password",
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secret,
+					},
+				},
+			},
+		})
 	}
 
 	if rf.Spec.Redis.EnableTLS {
@@ -689,17 +687,6 @@ func getRedisVolumes(inst types.RedisFailoverInstance, rf *v1.RedisFailover, sec
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: secretName,
-				},
-			},
-		})
-	}
-	if rf.Spec.Redis.Exporter.Enabled {
-		volumes = append(volumes, corev1.Volume{
-			Name: RedisExporterTempVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{
-					Medium:    corev1.StorageMediumMemory,
-					SizeLimit: resource.NewQuantity(1<<20, resource.BinarySI), //1Mi
 				},
 			},
 		})
