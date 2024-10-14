@@ -45,7 +45,7 @@ func GetPullPolicy(policies ...corev1.PullPolicy) corev1.PullPolicy {
 			return policy
 		}
 	}
-	return corev1.PullAlways
+	return corev1.PullIfNotPresent
 }
 
 func GenerateRedisTLSOptions() string {

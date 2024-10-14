@@ -480,6 +480,13 @@ func (r *Redis) ValidateCreate() (warns admission.Warnings, err error) {
 		r.Spec.Replicas.Sentinel.Slave = nil
 	}
 
+	if r.Spec.EnableTLS {
+		ver := redis.RedisVersion(r.Spec.Version)
+		if !ver.IsTLSSupported() {
+			return warns, fmt.Errorf("tls not supported in version %s", r.Spec.Version)
+		}
+	}
+
 	if err := validation.ValidateActiveRedisService(r.Spec.EnableActiveRedis, r.Spec.ServiceID, &warns); err != nil {
 		return warns, err
 	}
@@ -647,6 +654,13 @@ func (r *Redis) ValidateUpdate(_ runtime.Object) (warns admission.Warnings, err 
 					return warns, err
 				}
 			}
+		}
+	}
+
+	if r.Spec.EnableTLS {
+		ver := redis.RedisVersion(r.Spec.Version)
+		if !ver.IsTLSSupported() {
+			return warns, fmt.Errorf("tls not supported in version %s", r.Spec.Version)
 		}
 	}
 

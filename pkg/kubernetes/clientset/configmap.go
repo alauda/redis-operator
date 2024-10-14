@@ -19,11 +19,13 @@ package clientset
 import (
 	"context"
 	"reflect"
+	"time"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -77,17 +79,25 @@ func (p *ConfigMapOption) GetConfigMap(ctx context.Context, namespace string, na
 
 // CreateConfigMap implement the  ConfigMap.Interface
 func (p *ConfigMapOption) CreateConfigMap(ctx context.Context, namespace string, configMap *corev1.ConfigMap) error {
-	err := p.client.Create(ctx, configMap)
-	if err != nil {
-		return err
-	}
-	p.logger.WithValues("namespace", namespace, "configMap", configMap.Name).V(3).Info("configMap created")
-	return nil
+	return retry.OnError(retry.DefaultRetry, func(err error) bool {
+		return errors.IsInternalError(err) ||
+			errors.IsServerTimeout(err) ||
+			errors.IsTimeout(err) ||
+			errors.IsUnexpectedServerError(err) ||
+			errors.IsServiceUnavailable(err)
+	}, func() error {
+		return p.client.Create(ctx, configMap)
+	})
 }
 
 // UpdateConfigMap implement the  ConfigMap.Interface
 func (p *ConfigMapOption) UpdateConfigMap(ctx context.Context, namespace string, configMap *corev1.ConfigMap) error {
-	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+	return retry.RetryOnConflict(wait.Backoff{
+		Steps:    10,
+		Duration: 10 * time.Millisecond,
+		Factor:   1.0,
+		Jitter:   0.1,
+	}, func() error {
 		oldCm, err := p.GetConfigMap(ctx, namespace, configMap.Name)
 		if err != nil {
 			return err

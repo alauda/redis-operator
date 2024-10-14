@@ -514,13 +514,7 @@ func (n *RedisNode) Slots() *slot.Slots {
 
 	role := n.Role()
 	if self := n.nodes.Self(); self != nil && role == core.RedisRoleMaster {
-		slots := slot.NewSlots()
-		if err := slots.Load(self.Slots); err != nil {
-			// this should not happen
-			n.logger.Error(err, "load slots failed", "raw", self.Slots)
-			return nil
-		}
-		return slots
+		return self.Slots()
 	}
 	return nil
 }

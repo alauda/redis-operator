@@ -278,7 +278,7 @@ func (a *actorEnsureResource) ensureRedisSSL(ctx context.Context, inst types.Red
 			break
 		}
 		// check when the certificate created
-		if time.Since(oldCert.GetCreationTimestamp().Time) > time.Minute*5 {
+		if oldCert != nil && time.Since(oldCert.GetCreationTimestamp().Time) > time.Minute*5 {
 			return actor.NewResultWithError(ops.CommandAbort, fmt.Errorf("issue for tls certificate failed, please check the cert-manager"))
 		}
 		time.Sleep(time.Second * time.Duration(i+1))

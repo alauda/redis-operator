@@ -311,6 +311,9 @@ func (g *RuleEngine) isNodesHealthy(ctx context.Context, inst types.RedisFailove
 		if err == monitor.ErrMultipleMaster {
 			logger.Error(err, "multi master found")
 			return actor.NewResult(CommandHealMonitor)
+		} else if err == monitor.ErrAddressConflict {
+			logger.Error(err, "sentinel not update redis node announce address")
+			return actor.NewResult(CommandHealMonitor)
 		}
 		logger.Error(err, "failed to check all nodes monitored")
 		return actor.RequeueWithError(err)
@@ -321,7 +324,7 @@ func (g *RuleEngine) isNodesHealthy(ctx context.Context, inst types.RedisFailove
 	}
 
 	monitorMaster, err := inst.Monitor().Master(ctx)
-	if err == monitor.ErrMultipleMaster || err == monitor.ErrNoMaster {
+	if err == monitor.ErrMultipleMaster || err == monitor.ErrNoMaster || err == monitor.ErrAddressConflict {
 		logger.Error(err, "no usable master nodes found")
 		return actor.NewResult(CommandHealMonitor)
 	} else if err != nil {

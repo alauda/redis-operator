@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -98,6 +99,7 @@ type SentinelMonitorNode struct {
 	Flags                 string `json:"flags"`
 	LinkPendingCommands   int32  `json:"link_pending_commands"`
 	LinkRefcount          int32  `json:"link_refcount"`
+	FailoverState         string `json:"failover_state"`
 	LastPingSent          int64  `json:"last_ping_sent"`
 	LastOkPingReply       int64  `json:"last_ok_ping_reply"`
 	LastPingReply         int64  `json:"last_ping_reply"`
@@ -139,7 +141,14 @@ func (s *SentinelMonitorNode) IsMaster() bool {
 	if s == nil {
 		return false
 	}
-	return s.Flags == "master"
+	return strings.Contains(s.Flags, "master") && !strings.Contains(s.Flags, "down")
+}
+
+func (s *SentinelMonitorNode) IsFailovering() bool {
+	if s == nil {
+		return false
+	}
+	return slices.Contains(strings.Split(s.Flags, ","), "failover_in_progress")
 }
 
 const (
@@ -169,7 +178,7 @@ type RedisClient interface {
 	Clone(ctx context.Context, addr string) RedisClient
 
 	Ping(ctx context.Context) error
-	Info(ctx context.Context) (*RedisInfo, error)
+	Info(ctx context.Context, sections ...any) (*RedisInfo, error)
 	ClusterInfo(ctx context.Context) (*RedisClusterInfo, error)
 	ConfigGet(ctx context.Context, cate string) (map[string]string, error)
 	ConfigSet(ctx context.Context, params map[string]string) error
@@ -414,12 +423,15 @@ func (c *redisClient) ConfigSet(ctx context.Context, params map[string]string) e
 }
 
 // Info
-func (c *redisClient) Info(ctx context.Context) (*RedisInfo, error) {
+func (c *redisClient) Info(ctx context.Context, sections ...any) (*RedisInfo, error) {
 	if c == nil || c.pool == nil {
 		return nil, nil
 	}
 
-	data, err := redis.String(c.DoWithTimeout(ctx, time.Second*10, "INFO"))
+	conn := c.pool.Get()
+	defer conn.Close()
+
+	data, err := redis.String(redis.DoContext(conn, ctx, "INFO", sections...))
 	if err != nil {
 		return nil, err
 	}
@@ -534,6 +546,8 @@ func ParseSentinelMonitorNode(val interface{}) *SentinelMonitorNode {
 		case "link-refcount":
 			iv, _ := strconv.ParseInt(v, 10, 32)
 			node.LinkRefcount = int32(iv)
+		case "failover_state":
+			node.FailoverState = v
 		case "last-ping-sent":
 			iv, _ := strconv.ParseInt(v, 10, 64)
 			node.LastPingSent = iv

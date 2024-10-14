@@ -37,9 +37,11 @@ import (
 )
 
 var (
-	ErrNoMaster       = fmt.Errorf("no master")
-	ErrMultipleMaster = fmt.Errorf("multiple master without majority agreement")
-	ErrNotEnoughNodes = fmt.Errorf("not enough sentinel nodes")
+	ErrNoMaster        = fmt.Errorf("no master")
+	ErrDoFailover      = fmt.Errorf("redis sentinel doing failover")
+	ErrMultipleMaster  = fmt.Errorf("multiple master without majority agreement")
+	ErrAddressConflict = fmt.Errorf("master address conflict")
+	ErrNotEnoughNodes  = fmt.Errorf("not enough sentinel nodes")
 )
 
 var _ types.FailoverMonitor = (*SentinelMonitor)(nil)
@@ -136,7 +138,7 @@ func (s *SentinelMonitor) Policy() databasesv1.FailoverPolicy {
 	return databasesv1.SentinelFailoverPolicy
 }
 
-func (s *SentinelMonitor) Master(ctx context.Context) (*rediscli.SentinelMonitorNode, error) {
+func (s *SentinelMonitor) Master(ctx context.Context, flags ...bool) (*rediscli.SentinelMonitorNode, error) {
 	if s == nil {
 		return nil, nil
 	}
@@ -146,13 +148,25 @@ func (s *SentinelMonitor) Master(ctx context.Context) (*rediscli.SentinelMonitor
 	}
 	var (
 		masterStat      []*Stat
+		masterIds       = map[string]int{}
 		registeredNodes int
 	)
 	for _, node := range s.nodes {
 		n, err := node.MonitoringMaster(ctx, s.groupName)
 		if err != nil {
+			if err == ErrNoMaster || strings.Contains(err.Error(), "no such host") {
+				s.logger.Error(err, "master not registered", "addr", node.addr)
+				continue
+			}
 			// NOTE: here ignored any error, for the node may be offline forever
 			s.logger.Error(err, "check monitor status of sentinel failed", "addr", node.addr)
+			s.logger.Error(err, "check monitoring master status of sentinel failed", "addr", node.addr)
+			return nil, err
+		} else if n.IsFailovering() {
+			s.logger.Error(ErrDoFailover, "redis sentinel is doing failover", "node", n.Address())
+			return nil, ErrDoFailover
+		} else if !IsMonitoringNodeOnline(n) {
+			s.logger.Error(fmt.Errorf("master node offline"), "master node offline", "node", n.Address(), "flags", n.Flags)
 			continue
 		}
 		registeredNodes += 1
@@ -167,6 +181,9 @@ func (s *SentinelMonitor) Master(ctx context.Context) (*rediscli.SentinelMonitor
 		}); i < 0 {
 			masterStat = append(masterStat, &Stat{Node: n, Count: 1})
 		}
+		if n.RunId != "" {
+			masterIds[n.RunId] += 1
+		}
 	}
 	if len(masterStat) == 0 {
 		return nil, ErrNoMaster
@@ -178,8 +195,26 @@ func (s *SentinelMonitor) Master(ctx context.Context) (*rediscli.SentinelMonitor
 		return 1
 	})
 
+	if len(masterStat) > 1 {
+		if len(masterIds) == 1 {
+			return nil, ErrAddressConflict
+		}
+	}
 	if masterStat[0].Count >= 1+len(s.nodes)/2 || masterStat[0].Count == registeredNodes {
 		return masterStat[0].Node, nil
+	}
+
+	if len(flags) > 0 && flags[0] {
+		// NOTE: force to return the master node with the oldest role reported time
+		stat := masterStat[0]
+		for _, ms := range masterStat {
+			if ms.Node.RoleReportedTime > stat.Node.RoleReportedTime {
+				stat = ms
+			}
+		}
+		if stat.Count >= len(s.nodes)/2 {
+			return stat.Node, nil
+		}
 	}
 	return nil, ErrMultipleMaster
 }
@@ -239,18 +274,25 @@ func (s *SentinelMonitor) AllNodeMonitored(ctx context.Context) (bool, error) {
 	var (
 		registeredNodes = map[string]struct{}{}
 		masters         = map[string]int{}
+		masterIds       = map[string]int{}
+		mastersOffline  []string
 	)
 	for _, node := range s.nodes {
 		if master, err := node.MonitoringMaster(ctx, s.groupName); err != nil {
 			if err == ErrNoMaster {
 				return false, nil
 			}
+		} else if master.IsFailovering() {
+			return false, ErrDoFailover
 		} else if IsMonitoringNodeOnline(master) {
 			registeredNodes[master.Address()] = struct{}{}
 			masters[master.Address()] += 1
+			if master.RunId != "" {
+				masterIds[master.RunId] += 1
+			}
 		} else {
-			s.logger.Error(fmt.Errorf("master node offline"), "master node offline", "node", master.Address())
-			return false, nil
+			mastersOffline = append(mastersOffline, master.Address())
+			continue
 		}
 
 		if replicas, err := node.MonitoringReplicas(ctx, s.groupName); err != nil {
@@ -265,6 +307,11 @@ func (s *SentinelMonitor) AllNodeMonitored(ctx context.Context) (bool, error) {
 			}
 		}
 	}
+	if len(mastersOffline) > 0 {
+		s.logger.Error(fmt.Errorf("not all nodes monitored"), "master nodes offline", "nodes", mastersOffline)
+		return false, nil
+	}
+
 	for _, node := range s.failover.Nodes() {
 		if !node.IsReady() {
 			s.logger.Info("node not ready, ignored", "node", node.GetName())
@@ -278,7 +325,11 @@ func (s *SentinelMonitor) AllNodeMonitored(ctx context.Context) (bool, error) {
 			return false, nil
 		}
 	}
+
 	if len(masters) > 1 {
+		if len(masterIds) == 1 {
+			return false, ErrAddressConflict
+		}
 		return false, ErrMultipleMaster
 	}
 	return true, nil
@@ -375,11 +426,24 @@ func (s *SentinelMonitor) Monitor(ctx context.Context, masterNode redis.RedisNod
 		configs[k] = v
 	}
 
-	opUser := s.failover.Users().GetOpUser()
-	configs["auth-pass"] = opUser.Password.String()
-	if s.failover.Version().IsACLSupported() {
+	isAllAclSupported := func() bool {
+		for _, node := range s.nodes {
+			if !node.Version().IsACLSupported() {
+				return false
+			}
+		}
+		return true
+	}()
+
+	if s.failover.Version().IsACLSupported() && s.failover.IsACLAppliedToAll() && isAllAclSupported {
+		opUser := s.failover.Users().GetOpUser()
+		configs["auth-pass"] = opUser.Password.String()
 		configs["auth-user"] = opUser.Name
+	} else {
+		user := s.failover.Users().GetDefaultUser()
+		configs["auth-pass"] = user.Password.String()
 	}
+
 	masterIP, masterPort := masterNode.DefaultIP().String(), strconv.Itoa(masterNode.Port())
 	for _, node := range s.nodes {
 		if master, err := node.MonitoringMaster(ctx, s.groupName); err == ErrNoMaster ||
