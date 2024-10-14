@@ -59,7 +59,7 @@ func TestCreateRedisExporterContainer(t *testing.T) {
 				Name:            exporterContainerName,
 				Command:         []string{"/redis_exporter"},
 				Image:           "redis-exporter:latest",
-				ImagePullPolicy: corev1.PullAlways,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{Name: "REDIS_ALIAS", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
 					{Name: "REDIS_USER", Value: ""},
@@ -110,7 +110,7 @@ func TestCreateRedisExporterContainer(t *testing.T) {
 				Name:            exporterContainerName,
 				Command:         []string{"/redis_exporter"},
 				Image:           "redis-exporter:latest",
-				ImagePullPolicy: corev1.PullAlways,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{Name: "REDIS_ALIAS", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
 					{Name: "REDIS_USER", Value: ""},
@@ -180,7 +180,7 @@ func TestCreateStandaloneInitContainer(t *testing.T) {
 			expected: corev1.Container{
 				Name:            "standalone-pod",
 				Image:           "redis-tools:latest",
-				ImagePullPolicy: corev1.PullAlways,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				VolumeMounts: []corev1.VolumeMount{
 					{Name: "redis-data", MountPath: "/data"},
 					{Name: "redis-standalone", MountPath: "/tmp-data"},
@@ -214,7 +214,7 @@ func TestCreateStandaloneInitContainer(t *testing.T) {
 			expected: corev1.Container{
 				Name:            "standalone-pod",
 				Image:           "redis-tools:latest",
-				ImagePullPolicy: corev1.PullAlways,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				VolumeMounts: []corev1.VolumeMount{
 					{Name: "redis-data", MountPath: "/data"},
 					{Name: "redis-standalone", MountPath: "/tmp-data"},

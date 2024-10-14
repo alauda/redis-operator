@@ -1588,6 +1588,27 @@ func TestRedis_ValidateCreateCluster(t *testing.T) {
 			wantWarns: nil,
 		},
 		{
+			name: "cluster enabled clusterip",
+			redis: &Redis{
+				Spec: RedisSpec{
+					Arch: core.RedisCluster,
+					Replicas: &RedisReplicas{
+						Cluster: &ClusterReplicas{
+							Shard: pointer.Int32(3),
+							Slave: pointer.Int32(1),
+						},
+					},
+					Expose: InstanceAccess{
+						InstanceAccessBase: core.InstanceAccessBase{
+							ServiceType: corev1.ServiceTypeClusterIP,
+						},
+					},
+				},
+			},
+			wantErr:   nil,
+			wantWarns: nil,
+		},
+		{
 			name: "cluster enabled nodeport",
 			redis: &Redis{
 				Spec: RedisSpec{
@@ -1601,6 +1622,27 @@ func TestRedis_ValidateCreateCluster(t *testing.T) {
 					Expose: InstanceAccess{
 						InstanceAccessBase: core.InstanceAccessBase{
 							ServiceType: corev1.ServiceTypeNodePort,
+						},
+					},
+				},
+			},
+			wantErr:   nil,
+			wantWarns: nil,
+		},
+		{
+			name: "cluster enabled lb",
+			redis: &Redis{
+				Spec: RedisSpec{
+					Arch: core.RedisCluster,
+					Replicas: &RedisReplicas{
+						Cluster: &ClusterReplicas{
+							Shard: pointer.Int32(3),
+							Slave: pointer.Int32(1),
+						},
+					},
+					Expose: InstanceAccess{
+						InstanceAccessBase: core.InstanceAccessBase{
+							ServiceType: corev1.ServiceTypeLoadBalancer,
 						},
 					},
 				},
@@ -1833,7 +1875,6 @@ func TestRedis_ValidateCreateCluster(t *testing.T) {
 			wantErr:   fmt.Errorf("activeredis is enabled but serviceID is not valid"),
 			wantWarns: nil,
 		},
-
 		{
 			name: "cluster enabled activeredis",
 			redis: &Redis{
@@ -1857,6 +1898,42 @@ func TestRedis_ValidateCreateCluster(t *testing.T) {
 					},
 					EnableActiveRedis: true,
 					ServiceID:         pointer.Int32(1),
+				},
+			},
+			wantErr:   nil,
+			wantWarns: nil,
+		},
+		{
+			name: "cluster enabled tls for v5",
+			redis: &Redis{
+				Spec: RedisSpec{
+					Arch:    core.RedisCluster,
+					Version: "5.0",
+					Replicas: &RedisReplicas{
+						Cluster: &ClusterReplicas{
+							Shard: pointer.Int32(3),
+							Slave: pointer.Int32(1),
+						},
+					},
+					EnableTLS: true,
+				},
+			},
+			wantErr:   fmt.Errorf("tls not supported in version 5.0"),
+			wantWarns: nil,
+		},
+		{
+			name: "cluster enabled tls",
+			redis: &Redis{
+				Spec: RedisSpec{
+					Arch:    core.RedisCluster,
+					Version: "6.0",
+					Replicas: &RedisReplicas{
+						Cluster: &ClusterReplicas{
+							Shard: pointer.Int32(3),
+							Slave: pointer.Int32(1),
+						},
+					},
+					EnableTLS: true,
 				},
 			},
 			wantErr:   nil,
@@ -2259,6 +2336,42 @@ func TestRedis_ValidateCreateFailover(t *testing.T) {
 					},
 					EnableActiveRedis: true,
 					ServiceID:         pointer.Int32(1),
+				},
+			},
+			wantErr:   nil,
+			wantWarns: nil,
+		},
+		{
+			name: "failover enabled tls for v5",
+			redis: &Redis{
+				Spec: RedisSpec{
+					Arch:    core.RedisCluster,
+					Version: "5.0",
+					Replicas: &RedisReplicas{
+						Cluster: &ClusterReplicas{
+							Shard: pointer.Int32(3),
+							Slave: pointer.Int32(1),
+						},
+					},
+					EnableTLS: true,
+				},
+			},
+			wantErr:   fmt.Errorf("tls not supported in version 5.0"),
+			wantWarns: nil,
+		},
+		{
+			name: "failover enabled tls",
+			redis: &Redis{
+				Spec: RedisSpec{
+					Arch:    core.RedisCluster,
+					Version: "6.0",
+					Replicas: &RedisReplicas{
+						Cluster: &ClusterReplicas{
+							Shard: pointer.Int32(3),
+							Slave: pointer.Int32(1),
+						},
+					},
+					EnableTLS: true,
 				},
 			},
 			wantErr:   nil,
@@ -2756,6 +2869,42 @@ func TestRedis_ValidateUpdateCluster(t *testing.T) {
 					},
 					EnableActiveRedis: true,
 					ServiceID:         pointer.Int32(1),
+				},
+			},
+			wantErr:   nil,
+			wantWarns: nil,
+		},
+		{
+			name: "cluster enabled tls for v5",
+			redis: &Redis{
+				Spec: RedisSpec{
+					Arch:    core.RedisCluster,
+					Version: "5.0",
+					Replicas: &RedisReplicas{
+						Cluster: &ClusterReplicas{
+							Shard: pointer.Int32(3),
+							Slave: pointer.Int32(1),
+						},
+					},
+					EnableTLS: true,
+				},
+			},
+			wantErr:   fmt.Errorf("tls not supported in version 5.0"),
+			wantWarns: nil,
+		},
+		{
+			name: "cluster enabled tls",
+			redis: &Redis{
+				Spec: RedisSpec{
+					Arch:    core.RedisCluster,
+					Version: "6.0",
+					Replicas: &RedisReplicas{
+						Cluster: &ClusterReplicas{
+							Shard: pointer.Int32(3),
+							Slave: pointer.Int32(1),
+						},
+					},
+					EnableTLS: true,
 				},
 			},
 			wantErr:   nil,
@@ -3497,6 +3646,29 @@ func Test_getNodeCountByArch(t *testing.T) {
 		{
 			name: "empty",
 			args: args{},
+			want: 0,
+		},
+		{
+			name: "empty2",
+			args: args{
+				replicas: &RedisReplicas{},
+			},
+			want: 0,
+		},
+		{
+			name: "empty cluster",
+			args: args{
+				arch:     core.RedisCluster,
+				replicas: &RedisReplicas{},
+			},
+			want: 0,
+		},
+		{
+			name: "empty sentinel",
+			args: args{
+				arch:     core.RedisSentinel,
+				replicas: &RedisReplicas{},
+			},
 			want: 0,
 		},
 	}

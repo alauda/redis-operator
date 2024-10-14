@@ -72,7 +72,7 @@ func TestRedisExporterContainer(t *testing.T) {
 					"--web.telemetry-path",
 					PrometheusExporterTelemetryPath},
 				Image:           "redis-exporter:latest",
-				ImagePullPolicy: corev1.PullAlways,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Ports: []corev1.ContainerPort{
 					{
 						Name:          "prom-http",
@@ -144,7 +144,7 @@ func TestRedisExporterContainer(t *testing.T) {
 					"--web.telemetry-path",
 					PrometheusExporterTelemetryPath},
 				Image:           "redis-exporter:latest",
-				ImagePullPolicy: corev1.PullAlways,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Ports: []corev1.ContainerPort{
 					{
 						Name:          "prom-http",
