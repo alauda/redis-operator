@@ -15,7 +15,7 @@ images:
     repository: alaudaos/redis-operator
     tag: latest
     version: "3.18.0"
-    digest: "c6fffd56a8ac0411c9461891062070d1321a65f1cfa5172b1a50a9bc34a9d6a5"
+    digest: ""
   defaultRedis:
     repository: redis
     tag: 6.0
@@ -39,7 +39,7 @@ images:
 
 redisOperator:
   replicaCount: 1
-  imagePullPolicy: IfNotPresent
+  imagePullPolicy: Always
   resources:
     # We usually recommend not to specify default resources and to leave this as a conscious
     # choice for the user. This also increases chances charts run on environments with little
@@ -58,6 +58,10 @@ redisOperator:
     runAsNonRoot: true
     runAsUser: 65534
     runAsGroup: 65534
+
+issuer:
+  name: ""
+  kind: ClusterIssuer
 
 securityContext: {}
   # capabilities:

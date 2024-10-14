@@ -1,0 +1,108 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-operator-service
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    app.kubernetes.io/component: redis-operator
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: mredis.middleware.alauda.io
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: redis-operator-service
+      namespace: {{ .Release.Namespace }}
+      path: /mutate-redis-middleware-alauda-io-v1-redisuser
+  failurePolicy: Fail
+  name: mredisuser.kb.io
+  rules:
+  - apiGroups:
+    - redis.middleware.alauda.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redisusers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: redis-operator-service
+      namespace: {{ .Release.Namespace }}
+      path: /mutate-middleware-alauda-io-v1-redis
+  failurePolicy: Fail
+  name: mredis.kb.io
+  rules:
+  - apiGroups:
+    - middleware.alauda.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - redis
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: vredis.middleware.alauda.io
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: redis-operator-service
+      namespace: {{ .Release.Namespace }}
+      path: /validate-redis-middleware-alauda-io-v1-redisuser
+  failurePolicy: Fail
+  name: vredisuser.kb.io
+  rules:
+  - apiGroups:
+    - redis.middleware.alauda.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - redisusers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: redis-operator-service
+      namespace: {{ .Release.Namespace }}
+      path: /validate-middleware-alauda-io-v1-redis
+  failurePolicy: Fail
+  name: vredis.kb.io
+  rules:
+  - apiGroups:
+    - middleware.alauda.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    - DELETE
+    resources:
+    - redis
+  sideEffects: None
