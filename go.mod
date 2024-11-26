@@ -3,7 +3,7 @@ module github.com/alauda/redis-operator
 go 1.22
 
 require (
-	github.com/Masterminds/semver/v3 v3.3.0
+	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/alicebob/miniredis/v2 v2.33.0
 	github.com/cert-manager/cert-manager v1.9.1
 	github.com/fsnotify/fsnotify v1.6.0
