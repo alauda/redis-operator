@@ -17,7 +17,6 @@ FROM $BUILDER_IMAGE AS builder
 WORKDIR /workspace
 
 # Copy the go source
-COPY version version
 COPY api/ api/
 COPY cmd/ cmd/
 COPY internal/ internal/

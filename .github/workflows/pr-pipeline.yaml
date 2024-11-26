@@ -43,15 +43,15 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v4
 
-    - name: Read version from file
-      id: get_version
+    - name: Setup envs
+      id: setup_envs
       run: |
-        ls -la
-        echo "VERSION=$(cat version)" >> $GITHUB_ENV
+        VERSION=$(git tag --merged $BRANCH_NAME --sort=-v:refname | head -n 1)
+        if [ -z "$VERSION" ]; then
+          VERSION="3.18.0"
+        fi
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-    - name: Get branch name
-      id: get_branch
-      run: |
         if [ "${{ github.event_name }}" == "pull_request" ]; then
           BRANCH_NAME=${{ github.head_ref }}
         else
@@ -61,9 +61,9 @@ jobs:
         SANITIZED_BRANCH_NAME=$(echo "$BRANCH_NAME" | tr -cs '[:alnum:]' '-' | sed 's/-*$//' | tr '[:upper:]' '[:lower:]')
         echo "BRANCH_NAME=$SANITIZED_BRANCH_NAME" >> $GITHUB_ENV
 
-    - name: Get short commit SHA
-      id: get_commit
-      run: echo "COMMIT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+        echo "TIMESTAMP=$(date -u +'%y%m%d%H%M')" >> $GITHUB_ENV
+
+        echo "COMMIT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -87,6 +87,6 @@ jobs:
         file: ./build/Dockerfile
         context: .
         push: true
-        tags: ghcr.io/${{ github.repository }}:${{ env.VERSION }}-${{ env.BRANCH_NAME }}-${{ env.COMMIT_SHA }}
+        tags: ghcr.io/${{ github.repository }}:${{ env.VERSION }}-${{ env.BRANCH_NAME }}-${{ env.TIMESTAMP }}.${{ env.COMMIT_SHA }}
         platforms: linux/amd64,linux/arm64
 
