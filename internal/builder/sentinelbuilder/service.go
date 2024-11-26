@@ -17,8 +17,6 @@ limitations under the License.
 package sentinelbuilder
 
 import (
-	"fmt"
-
 	v1 "github.com/alauda/redis-operator/api/databases/v1"
 	"github.com/alauda/redis-operator/internal/builder"
 	"github.com/alauda/redis-operator/internal/util"
@@ -122,46 +120,6 @@ func NewSentinelHeadlessServiceForCR(inst *v1.RedisSentinel, selectors map[strin
 	}
 }
 
-func NewRedisNodePortService(inst *v1.RedisSentinel, index int, nodePort int32, selectors map[string]string) *corev1.Service {
-	var (
-		namespace = inst.Namespace
-		name      = fmt.Sprintf("%s-%d", GetSentinelStatefulSetName(inst.Name), index)
-		ptype     = corev1.IPFamilyPolicySingleStack
-		protocol  = []corev1.IPFamily{}
-	)
-	if inst.Spec.Expose.IPFamilyPrefer == corev1.IPv6Protocol {
-		protocol = append(protocol, corev1.IPv6Protocol)
-	} else {
-		protocol = append(protocol, corev1.IPv4Protocol)
-	}
-	labels := lo.Assign(GetCommonLabels(inst.Name), selectors, GenerateSelectorLabels(RedisArchRoleSEN, inst.Name))
-
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            name,
-			Namespace:       namespace,
-			Labels:          labels,
-			Annotations:     inst.Spec.Expose.Annotations,
-			OwnerReferences: util.BuildOwnerReferences(inst),
-		},
-		Spec: corev1.ServiceSpec{
-			IPFamilies:     protocol,
-			IPFamilyPolicy: &ptype,
-			Type:           corev1.ServiceTypeNodePort,
-			Ports: []corev1.ServicePort{
-				{
-					Port:       RedisSentinelSVCPort,
-					TargetPort: intstr.FromInt(RedisSentinelSVCPort),
-					Protocol:   corev1.ProtocolTCP,
-					Name:       SentinelContainerPortName,
-					NodePort:   nodePort,
-				},
-			},
-			Selector: map[string]string{builder.PodNameLabelKey: name},
-		},
-	}
-}
-
 // NewPodService returns a new Service for the given RedisFailover and index, with the configed service type
 func NewPodService(sen *v1.RedisSentinel, index int, selectors map[string]string) *corev1.Service {
 	return NewPodNodePortService(sen, index, selectors, 0)
@@ -195,7 +153,7 @@ func NewPodNodePortService(sen *v1.RedisSentinel, index int, selectors map[strin
 		Spec: corev1.ServiceSpec{
 			IPFamilies:     protocol,
 			IPFamilyPolicy: &ptype,
-			Type:           corev1.ServiceTypeNodePort,
+			Type:           sen.Spec.Expose.ServiceType,
 			Ports: []corev1.ServicePort{
 				{
 					Port:       RedisSentinelSVCPort,

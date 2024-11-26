@@ -22,8 +22,13 @@ import (
 	"strings"
 	"time"
 
+	clusterv1 "github.com/alauda/redis-operator/api/cluster/v1alpha1"
+	"github.com/alauda/redis-operator/api/core"
+	databasesv1 "github.com/alauda/redis-operator/api/databases/v1"
 	redismiddlewarealaudaiov1 "github.com/alauda/redis-operator/api/middleware/redis/v1"
+	"github.com/alauda/redis-operator/internal/builder"
 	"github.com/alauda/redis-operator/internal/controller/middleware/redisuser"
+	"github.com/alauda/redis-operator/internal/util"
 	"github.com/alauda/redis-operator/pkg/kubernetes"
 	security "github.com/alauda/redis-operator/pkg/security/password"
 
@@ -95,25 +100,73 @@ func (r *RedisUserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, nil
 	}
 
+	switch instance.Spec.Arch {
+	case core.RedisSentinel, core.RedisStandalone:
+		rf := &databasesv1.RedisFailover{}
+		if err := r.Get(ctx, types.NamespacedName{Namespace: instance.Namespace, Name: instance.Spec.RedisName}, rf); err != nil {
+			if errors.IsNotFound(err) {
+				logger.Error(err, "redis instance not found", "name", instance.Spec.RedisName)
+				return ctrl.Result{Requeue: true}, r.Delete(ctx, &instance)
+			}
+			logger.Error(err, "get redis failover failed", "name", instance.Name)
+			return ctrl.Result{}, err
+		}
+	case core.RedisCluster:
+		cluster := &clusterv1.DistributedRedisCluster{}
+		if err := r.Get(ctx, types.NamespacedName{Namespace: instance.Namespace, Name: instance.Spec.RedisName}, cluster); err != nil {
+			if errors.IsNotFound(err) {
+				logger.Error(err, "redis instance not found", "name", instance.Spec.RedisName)
+				return ctrl.Result{Requeue: true}, r.Delete(ctx, &instance)
+			}
+			logger.Error(err, "get redis cluster failed", "name", instance.Name)
+			return ctrl.Result{}, err
+		}
+	}
+
 	// verify redis user password
 	for _, name := range instance.Spec.PasswordSecrets {
 		if name == "" {
 			continue
 		}
 		secret := &v1.Secret{}
-		if err := r.Get(context.Background(), types.NamespacedName{
+		if err := r.Get(ctx, types.NamespacedName{
 			Namespace: instance.Namespace,
 			Name:      name,
 		}, secret); err != nil {
-			logger.Info("get secret failed", "secret name", name)
+			logger.Error(err, "get secret failed", "secret name", name)
 			instance.Status.Message = err.Error()
 			instance.Status.Phase = redismiddlewarealaudaiov1.Fail
-			return ctrl.Result{}, r.Client.Status().Update(ctx, &instance)
+			if e := r.Client.Status().Update(ctx, &instance); e != nil {
+				logger.Error(e, "update RedisUser status to Fail failed")
+			}
+			return ctrl.Result{}, err
 		} else if err := security.PasswordValidate(string(secret.Data["password"]), 8, 32); err != nil {
 			if instance.Spec.AccountType != redismiddlewarealaudaiov1.System {
 				instance.Status.Message = err.Error()
 				instance.Status.Phase = redismiddlewarealaudaiov1.Fail
-				return ctrl.Result{RequeueAfter: time.Minute}, r.Client.Status().Update(ctx, &instance)
+				if e := r.Client.Status().Update(ctx, &instance); e != nil {
+					logger.Error(e, "update RedisUser status to Fail failed")
+				}
+				return ctrl.Result{}, err
+			}
+		}
+
+		if secret.GetLabels() == nil {
+			secret.SetLabels(map[string]string{})
+		}
+		if secret.Labels[builder.InstanceNameLabel] != instance.Spec.RedisName ||
+			len(secret.GetOwnerReferences()) == 0 || secret.OwnerReferences[0].UID != instance.GetUID() {
+
+			secret.Labels[builder.ManagedByLabel] = "redis-operator"
+			secret.Labels[builder.InstanceNameLabel] = instance.Spec.RedisName
+			secret.OwnerReferences = util.BuildOwnerReferences(&instance)
+			if err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				return r.K8sClient.UpdateSecret(ctx, instance.Namespace, secret)
+			}); err != nil {
+				logger.Error(err, "update secret owner failed", "secret", secret.Name)
+				instance.Status.Message = err.Error()
+				instance.Status.Phase = redismiddlewarealaudaiov1.Fail
+				return ctrl.Result{RequeueAfter: time.Second * 5}, r.Client.Status().Update(ctx, &instance)
 			}
 		}
 	}

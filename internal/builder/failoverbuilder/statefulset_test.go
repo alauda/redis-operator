@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	v1 "github.com/alauda/redis-operator/api/databases/v1"
+	"github.com/alauda/redis-operator/internal/builder"
 	"github.com/alauda/redis-operator/pkg/types/user"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -56,13 +57,18 @@ func TestCreateRedisExporterContainer(t *testing.T) {
 			},
 			expected: corev1.Container{
 				Name:            exporterContainerName,
-				Command:         []string{"/bin/sh", "-c", "if [ -f /account/password ]; then echo \"{\\\"${REDIS_ADDR}\\\": \\\"$(cat /account/password)\\\"}\" > /tmp/passwords.json; fi /redis_exporter"},
+				Command:         []string{"/redis_exporter"},
 				Image:           "redis-exporter:latest",
-				ImagePullPolicy: corev1.PullAlways,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{Name: "REDIS_ALIAS", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
 					{Name: "REDIS_USER", Value: ""},
-					{Name: "REDIS_PASSWORD_FILE", Value: "/tmp/passwords.json"},
+					{Name: "REDIS_PASSWORD", ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							Key:                  "password",
+							LocalObjectReference: corev1.LocalObjectReference{Name: "secret-name"},
+						},
+					}},
 					{Name: "REDIS_ADDR", Value: "redis://local.inject:6379"},
 				},
 				Ports: []corev1.ContainerPort{
@@ -78,13 +84,7 @@ func TestCreateRedisExporterContainer(t *testing.T) {
 						corev1.ResourceMemory: resource.MustParse("100Mi"),
 					},
 				},
-				SecurityContext: &corev1.SecurityContext{
-					ReadOnlyRootFilesystem: pointer.Bool(true),
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					{Name: redisAuthName, MountPath: "/account"},
-					{Name: RedisExporterTempVolumeName, MountPath: "/tmp"},
-				},
+				SecurityContext: builder.GetSecurityContext(nil),
 			},
 		},
 		{
@@ -108,13 +108,18 @@ func TestCreateRedisExporterContainer(t *testing.T) {
 			},
 			expected: corev1.Container{
 				Name:            exporterContainerName,
-				Command:         []string{"/bin/sh", "-c", "if [ -f /account/password ]; then echo \"{\\\"${REDIS_ADDR}\\\": \\\"$(cat /account/password)\\\"}\" > /tmp/passwords.json; fi /redis_exporter"},
+				Command:         []string{"/redis_exporter"},
 				Image:           "redis-exporter:latest",
-				ImagePullPolicy: corev1.PullAlways,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Env: []corev1.EnvVar{
 					{Name: "REDIS_ALIAS", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
 					{Name: "REDIS_USER", Value: ""},
-					{Name: "REDIS_PASSWORD_FILE", Value: "/tmp/passwords.json"},
+					{Name: "REDIS_PASSWORD", ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							Key:                  "password",
+							LocalObjectReference: corev1.LocalObjectReference{Name: "secret-name"},
+						},
+					}},
 					{Name: "REDIS_EXPORTER_TLS_CLIENT_KEY_FILE", Value: "/tls/tls.key"},
 					{Name: "REDIS_EXPORTER_TLS_CLIENT_CERT_FILE", Value: "/tls/tls.crt"},
 					{Name: "REDIS_EXPORTER_TLS_CA_CERT_FILE", Value: "/tls/ca.crt"},
@@ -134,14 +139,10 @@ func TestCreateRedisExporterContainer(t *testing.T) {
 						corev1.ResourceMemory: resource.MustParse("100Mi"),
 					},
 				},
-				SecurityContext: &corev1.SecurityContext{
-					ReadOnlyRootFilesystem: pointer.Bool(true),
-				},
 				VolumeMounts: []corev1.VolumeMount{
-					{Name: redisAuthName, MountPath: "/account"},
-					{Name: RedisExporterTempVolumeName, MountPath: "/tmp"},
 					{Name: RedisTLSVolumeName, MountPath: "/tls"},
 				},
+				SecurityContext: builder.GetSecurityContext(nil),
 			},
 		},
 	}
@@ -179,7 +180,7 @@ func TestCreateStandaloneInitContainer(t *testing.T) {
 			expected: corev1.Container{
 				Name:            "standalone-pod",
 				Image:           "redis-tools:latest",
-				ImagePullPolicy: corev1.PullAlways,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				VolumeMounts: []corev1.VolumeMount{
 					{Name: "redis-data", MountPath: "/data"},
 					{Name: "redis-standalone", MountPath: "/tmp-data"},
@@ -213,7 +214,7 @@ func TestCreateStandaloneInitContainer(t *testing.T) {
 			expected: corev1.Container{
 				Name:            "standalone-pod",
 				Image:           "redis-tools:latest",
-				ImagePullPolicy: corev1.PullAlways,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				VolumeMounts: []corev1.VolumeMount{
 					{Name: "redis-data", MountPath: "/data"},
 					{Name: "redis-standalone", MountPath: "/tmp-data"},

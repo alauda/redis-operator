@@ -19,6 +19,7 @@ package failover
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/url"
@@ -31,6 +32,158 @@ import (
 	"github.com/urfave/cli/v2"
 	"k8s.io/client-go/kubernetes"
 )
+
+func getRedisInfo(ctx context.Context, redisClient redis.RedisClient, logger logr.Logger) (*redis.RedisInfo, error) {
+	var (
+		err  error
+		info *redis.RedisInfo
+	)
+	for i := 0; i < 5; i++ {
+		if info, err = redisClient.Info(ctx); err != nil {
+			logger.Error(err, "get info failed, retry...")
+			time.Sleep(time.Second)
+			continue
+		}
+		break
+	}
+	return info, err
+}
+
+func getRedisConfig(ctx context.Context, redisClient redis.RedisClient, logger logr.Logger) (map[string]string, error) {
+	var (
+		err error
+		cfg map[string]string
+	)
+	for i := 0; i < 5; i++ {
+		cfg, err = redisClient.ConfigGet(ctx, "*")
+		if err != nil {
+			logger.Error(err, "get config failed")
+			time.Sleep(time.Second)
+			continue
+		}
+		break
+	}
+	return cfg, err
+}
+
+func checkReadyToFailover(ctx context.Context, nodes []string, name string, senAuthInfo *redis.AuthInfo, logger logr.Logger) ([]string, error) {
+	var healthyNodes []string
+	for _, node := range nodes {
+		if err := func() error {
+			senClient := redis.NewRedisClient(node, *senAuthInfo)
+			defer senClient.Close()
+
+			val, err := senClient.DoWithTimeout(ctx, time.Second*3, "SENTINEL", "MASTER", name)
+			if err != nil {
+				senClient.Close()
+				return err
+			}
+
+			fields, _ := redis.StringMap(val, nil)
+			if fields["flags"] == "master" {
+				return nil
+			}
+			return fmt.Errorf("monitoring master not healthy, flags=%s", fields["flags"])
+		}(); err == nil {
+			healthyNodes = append(healthyNodes, node)
+		} else {
+			logger.Error(err, "check monitoring master failed")
+		}
+	}
+	return healthyNodes, nil
+}
+
+var (
+	ErrFailoverRetry = errors.New("failover retry")
+	ErrFailoverAbort = errors.New("failover abort")
+)
+
+func doFailover(ctx context.Context, nodes []string, name string, senAuthInfo *redis.AuthInfo, serveAddresses map[string]struct{}, logger logr.Logger) error {
+	var (
+		senClient                  redis.RedisClient
+		noSentinelUsableCheckCount int
+	)
+	for i := 0; noSentinelUsableCheckCount < 2; i++ {
+		logger.Info("check sentinel status")
+		healthySentinelNodeAddrs, err := checkReadyToFailover(ctx, nodes, name, senAuthInfo, logger)
+		if err != nil {
+			logger.Error(err, "cluster not ready to do failover, retry in 10s")
+			time.Sleep(time.Second * 10)
+			continue
+		} else if len(healthySentinelNodeAddrs) < len(nodes)/2+1 {
+			if len(healthySentinelNodeAddrs) == 0 {
+				noSentinelUsableCheckCount += 1
+				time.Sleep(time.Second * 15)
+				continue
+			}
+			logger.Error(errors.New("not enough healthy sentinel nodes"), "cluster not ready to do failover, retry in 10s")
+			time.Sleep(time.Second * 10)
+			continue
+		}
+		noSentinelUsableCheckCount = 0
+
+		// connect to the first healthy sentinel node
+		for _, node := range healthySentinelNodeAddrs {
+			if senClient, err = func() (redis.RedisClient, error) {
+				senClient := redis.NewRedisClient(node, *senAuthInfo)
+				if _, err := senClient.DoWithTimeout(ctx, time.Second, "PING"); err != nil {
+					senClient.Close()
+					return nil, err
+				}
+				return senClient, nil
+			}(); err != nil {
+				logger.Error(err, "connect to sentinel node failed")
+				continue
+			}
+			break
+		}
+		if senClient != nil {
+			break
+		}
+		time.Sleep(time.Second * 10)
+	}
+	if senClient == nil {
+		logger.Error(errors.New("no sentinel node usable"), "failover abort")
+		return ErrFailoverAbort
+	}
+	defer senClient.Close()
+
+	masterInfo, err := redis.StringMap(senClient.DoWithTimeout(ctx, time.Second, "SENTINEL", "MASTER", name))
+	if err != nil {
+		logger.Error(err, "get master info failed")
+		return ErrFailoverRetry
+	}
+	var addr string
+	if ip, port := masterInfo["ip"], masterInfo["port"]; ip != "" && port != "" {
+		addr = net.JoinHostPort(ip, port)
+	}
+
+	logger.Info("current node is master, try failover", "master", addr)
+	if _, err = senClient.DoWithTimeout(ctx, time.Second, "SENTINEL", "FAILOVER", name); err != nil {
+		logger.Error(err, "do failover failed")
+		return ErrFailoverRetry
+	}
+
+	for j := 0; j < 6; j++ {
+		if masterInfo, err := redis.StringMap(senClient.DoWithTimeout(ctx, time.Second, "SENTINEL", "MASTER", name)); err != nil {
+			logger.Error(err, "get info failed")
+			return ErrFailoverRetry
+		} else {
+			var addr string
+			if ip, port := masterInfo["ip"], masterInfo["port"]; ip != "" && port != "" {
+				addr = net.JoinHostPort(ip, port)
+			}
+			if addr != "" {
+				if _, ok := serveAddresses[addr]; !ok {
+					logger.Info("failover success", "master", addr)
+					return nil
+				}
+			}
+		}
+		time.Sleep(time.Second * 5)
+	}
+	return ErrFailoverRetry
+}
 
 // Shutdown 在退出时做 failover
 //
@@ -65,21 +218,7 @@ func Shutdown(ctx context.Context, c *cli.Context, client *kubernetes.Clientset,
 	redisClient := redis.NewRedisClient(addr, *authInfo)
 	defer redisClient.Close()
 
-	info, err := func() (*redis.RedisInfo, error) {
-		var (
-			err  error
-			info *redis.RedisInfo
-		)
-		for i := 0; i < 5; i++ {
-			if info, err = redisClient.Info(ctx); err != nil {
-				logger.Error(err, "get info failed, retry...")
-				time.Sleep(time.Second)
-				continue
-			}
-			break
-		}
-		return info, err
-	}()
+	info, err := getRedisInfo(ctx, redisClient, logger)
 	if err != nil {
 		logger.Error(err, "check node role failed, abort auto failover")
 		return err
@@ -93,22 +232,7 @@ func Shutdown(ctx context.Context, c *cli.Context, client *kubernetes.Clientset,
 					serveAddresses[net.JoinHostPort(ip, "6379")] = struct{}{}
 				}
 			}
-			if config, err := func() (map[string]string, error) {
-				var (
-					err error
-					cfg map[string]string
-				)
-				for i := 0; i < 5; i++ {
-					cfg, err = redisClient.ConfigGet(ctx, "*")
-					if err != nil {
-						logger.Error(err, "get config failed")
-						time.Sleep(time.Second)
-						continue
-					}
-					break
-				}
-				return cfg, err
-			}(); err != nil {
+			if config, err := getRedisConfig(ctx, redisClient, logger); err != nil {
 				logger.Error(err, "get config failed ")
 			} else {
 				ip, port := config["replica-announce-ip"], config["replica-announce-port"]
@@ -128,83 +252,21 @@ func Shutdown(ctx context.Context, c *cli.Context, client *kubernetes.Clientset,
 				sentinelNodes = strings.Split(u.Host, ",")
 			}
 
-			var senClient redis.RedisClient
-			for _, node := range sentinelNodes {
-				if senClient, err = func() (redis.RedisClient, error) {
-					senClient := redis.NewRedisClient(node, *senAuthInfo)
-					if _, err := senClient.DoWithTimeout(ctx, time.Second, "PING"); err != nil {
-						logger.Error(err, "ping node failed")
-						senClient.Close()
-						return nil, err
-					}
-					return senClient, nil
-				}(); senClient != nil {
-					break
-				}
-			}
-			if senClient == nil {
-				logger.Error(err, "get sentinel client failed")
-				return err
-			}
-			defer senClient.Close()
-
-		__FAILOVER_END__:
-			for i := 0; ; i++ {
-				info, err := senClient.Info(ctx)
-				if err != nil {
-					if strings.Contains(err.Error(), "no such host") {
-						logger.Error(err, "sentinel node is down, give up manual failover")
-						break __FAILOVER_END__
-					}
-					logger.Error(err, "get info failed")
-					time.Sleep(time.Second)
-					continue
-				}
-				addr := info.SentinelMaster0.Address.String()
-				if _, ok := serveAddresses[addr]; !ok {
-					logger.Info("current node is not master, skip failover", "master", addr)
-					break __FAILOVER_END__
-				}
-				if info.SentinelMaster0.Replicas == 0 {
-					logger.Info("current master has no replicas, skip failover")
-					break __FAILOVER_END__
-				}
-
-				logger.Info("current node is master, try failover", "master", addr)
-				if _, err = senClient.DoWithTimeout(ctx, time.Second, "SENTINEL", "FAILOVER", name); err != nil {
-					if strings.Contains(err.Error(), "no such host") {
-						logger.Error(err, "sentinel node is down, give up manual failover")
-						break __FAILOVER_END__
-					} else if strings.Contains(err.Error(), "INPROG Failover already in progress") {
-						logger.Info("failover in progress")
-					} else {
-						logger.Error(err, "do failover failed, retry in 10s")
+			for {
+				if err := doFailover(ctx, sentinelNodes, name, senAuthInfo, serveAddresses, logger); err != nil {
+					if err == ErrFailoverRetry {
 						time.Sleep(time.Second * 10)
 						continue
 					}
+					logger.Error(err, "failover aborted")
+					return err
 				}
-				for j := 0; j < 6; j++ {
-					if info, err = senClient.Info(ctx); err != nil {
-						if strings.Contains(err.Error(), "no such host") {
-							logger.Error(err, "sentinel node is down, give up manual failover")
-							break __FAILOVER_END__
-						}
-						logger.Error(err, "get info failed")
-					} else {
-						addr := info.SentinelMaster0.Address.String()
-						if _, ok := serveAddresses[addr]; !ok {
-							logger.Info("failover success", "master", addr)
-							break __FAILOVER_END__
-						}
-					}
-					time.Sleep(time.Second * 5)
-				}
+				// wait 30 for data sync
+				time.Sleep(time.Second * 30)
+				return nil
 			}
-			return nil
 		}()
 	}
-
-	time.Sleep(time.Second * 10)
 
 	logger.Info("do shutdown node")
 	// NOTE: here set timeout to 300s, which will try best to do a shutdown snapshot

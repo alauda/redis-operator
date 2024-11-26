@@ -1,4 +1,16 @@
+
+{{- if not .Values.issuer.name }}
+1. If Issuer not specified, please run the following command to pass tls verify:
+
+CA_BUNDLE=$(kubectl get secret redis-operator-service-cert -n {{ .Release.Namespace }} -o jsonpath='{.data.ca\.crt}')
+kubectl patch validatingwebhookconfigurations vredis.middleware.alauda.io --type='json' -p="[{'op': 'replace', 'path': '/webhooks/0/clientConfig/caBundle', 'value':'${CA_BUNDLE}'},{'op': 'replace', 'path': '/webhooks/1/clientConfig/caBundle', 'value':'${CA_BUNDLE}'}]"
+kubectl patch mutatingwebhookconfigurations mredis.middleware.alauda.io --type='json' -p="[{'op': 'replace', 'path': '/webhooks/0/clientConfig/caBundle', 'value':'${CA_BUNDLE}'},{'op': 'replace', 'path': '/webhooks/1/clientConfig/caBundle', 'value':'${CA_BUNDLE}'}]"
+
+2. To deploy Redis instance, apply this template:
+
+{{- else }}
 1. To deploy Redis instance, apply this template:
+{{- end }}
 
 ---
 apiVersion: middleware.alauda.io/v1
@@ -11,13 +23,6 @@ spec:
     save: 60 10000 300 100 600 1
   exporter:
     enabled: true
-    resources:
-      limits:
-        cpu: 100m
-        memory: 384Mi
-      requests:
-        cpu: 50m
-        memory: 128Mi
   passwordSecret: redis-password
   persistent:
     storageClassName: sc-topolvm
@@ -34,32 +39,7 @@ spec:
       cpu: 300m
       memory: 300Mi
   sentinel:
-    affinity:
-      podAntiAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-        - labelSelector:
-            matchExpressions:
-            - key: app.kubernetes.io/component
-              operator: In
-              values:
-              - sentinel
-            - key: redissentinels.databases.spotahome.com/name
-              operator: In
-              values:
-              - redis-failover
-          topologyKey: kubernetes.io/hostname
-    monitorConfig:
-      down-after-milliseconds: "30000"
-      failover-timeout: "180000"
-      parallel-syncs: "1"
     replicas: 3
-    resources:
-      limits:
-        cpu: 100m
-        memory: 128Mi
-      requests:
-        cpu: 100m
-        memory: 128Mi
   version: "6.0"
 ---
 

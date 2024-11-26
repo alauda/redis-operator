@@ -188,9 +188,7 @@ func NewCommand(ctx context.Context) *cli.Command {
 						logger.Error(err, "create k8s client failed, error=%s", err)
 						return cli.Exit(err, 1)
 					}
-					if err := Shutdown(ctx, c, client, logger); err != nil {
-						return cli.Exit(err, 1)
-					}
+					_ = Shutdown(ctx, c, client, logger)
 					return nil
 				},
 			},

@@ -136,71 +136,6 @@ spec:
                   cpu: 1000m
                   memory: 2000Mi
   tasks:
-    - name: go-lint
-      timeout: 30m
-      retries: 0
-      taskRef:
-        kind: ClusterTask
-        name: golangci-lint
-      workspaces:
-        - name: source
-          workspace: source
-        - name: cache
-          workspace: source
-      params:
-        - name: tool-image
-          value: registry.alauda.cn:60080/devops/builder-go-121:latest
-        - name: command
-          value: >
-            export GOPROXY=https://build-nexus.alauda.cn/repository/golang/,https://goproxy.cn,direct
-
-            export GOMAXPROCS=4
-
-            golangci-lint --concurrency=4 run --verbose
-        - name: quality-gate
-          value: "true"
-        - name: quality-gate-rules
-          value:
-          - issues-count=0
-    - name: go-test
-      runAfter:
-        - go-lint
-      timeout: 30m
-      retries: 0
-      taskRef:
-        kind: ClusterTask
-        name: go-unit-test
-      workspaces:
-        - name: source
-          workspace: source
-      params:
-        - name: command
-          value: |-
-            export GOPROXY="https://build-nexus.alauda.cn/repository/golang/,https://goproxy.cn,direct"
-            export GONOSUMDB="gitlab-ce.alauda.cn/*,gomod.alauda.cn/*,bitbucket.org/mathildetech/*"
-            make test
-        - name: coverage-report-path
-          value: ./coverage.txt
-        - name: quality-gate
-          value: "false"
-        - name: tool-image
-          value: docker-mirrors.alauda.cn/library/golang:1.21.8
-    - name: code-scan
-      runAfter:
-        - go-test
-      timeout: 30m
-      retries: 0
-      taskRef:
-        kind: ClusterTask
-        name: sonarqube-analysis
-      workspaces:
-        - name: source
-          workspace: source
-      params:
-        - name: server
-          value: https://build-sonar.alauda.cn
-        - name: quality-gate
-          value: "false"
     - name: operator-amd64
       timeout: 30m
       retries: 0
@@ -216,6 +151,8 @@ spec:
         - name: container-images
           value:
             - build-harbor.alauda.cn/middleware/redis-operator
+        - name: dockerfile
+          value: build/Dockerfile
         - name: labels
           value:
             - branch=$(build.git.branch.name)
@@ -235,6 +172,8 @@ spec:
         - name: container-images
           value:
             - build-harbor.alauda.cn/middleware/redis-operator
+        - name: dockerfile
+          value: build/Dockerfile
         - name: labels
           value:
             - branch=$(build.git.branch.name)
@@ -255,122 +194,12 @@ spec:
         - name: container-images
           value:
             - build-harbor.alauda.cn/middleware/redis-operator:$(build.git.version.docker)
+        - name: dockerfile
+          value: build/Dockerfile
         - name: source-image-digests
           value:
             - $(tasks.operator-amd64.results.ociContainerImageBuild-url)
             - $(tasks.operator-arm64.results.ociContainerImageBuild-url)
-    - name: update-values-yaml
-      runAfter:
-        - operator-merge
-      timeout: 30m
-      retries: 0
-      taskRef:
-        kind: ClusterTask
-        name: alauda-update-chart-dependencies
-      workspaces:
-        - name: source
-          workspace: source
-      when: []
-      params:
-        - name: chart-file-path
-          value: ./
-        - name: branch
-          value: $(build.git.branch)
-        - name: verbose
-          value: "true"
-    - name: bundle-operator
-      runAfter:
-        - update-values-yaml
-      timeout: 30m
-      retries: 0
-      taskRef:
-        kind: ClusterTask
-        name: alauda-operator-bundle
-      workspaces:
-        - name: source
-          workspace: source
-      params:
-        - name: set-skip-range
-          value: ">=0.0.0 <$(build.git.version.clean)"
-        - name: build-command
-          value: curl https://build-nexus.alauda.cn/repository/alauda/middleware/operator-sdk_linux/operator-sdk_1_33_linux_$(arch) -o $(go env GOPATH)/bin/operator-sdk && chmod +x $(go env GOPATH)/bin/operator-sdk && make bundle
-        - name: controller-version
-          value: $(build.git.version.docker)
-        - name: bundle-version
-          value: $(build.git.version.clean)
-        - name: csv-file-path
-          value: config/manifests/bases/redis-operator.clusterserviceversion.yaml
-        - name: bundle-csv-file-path
-          value: bundle/manifests/redis-operator.clusterserviceversion.yaml
-        - name: controller-values-filepath
-          value: values.yaml
-        - name: controller-values-jsonpath
-          value: global.images.redis-operator.tag
-    - name: bundle-amd64
-      runAfter:
-        - bundle-operator
-      timeout: 30m
-      retries: 0
-      taskRef:
-        kind: ClusterTask
-        name: build-image-buildkit
-      workspaces:
-        - name: source
-          workspace: source
-      params:
-        - name: container-images
-          value:
-            - build-harbor.alauda.cn/middleware/redis-operator-bundle
-        - name: dockerfile
-          value: bundle.Dockerfile
-        - name: labels
-          value:
-            - branch=$(build.git.branch.name)
-            - app_version=$(build.git.branch.name)
-            - commit=$(build.git.lastCommit.id)
-    - name: bundle-arm64
-      runAfter:
-        - bundle-operator
-      timeout: 30m
-      retries: 0
-      taskRef:
-        kind: ClusterTask
-        name: build-image-buildkit
-      workspaces:
-        - name: source
-          workspace: source
-      params:
-        - name: container-images
-          value:
-            - build-harbor.alauda.cn/middleware/redis-operator-bundle
-        - name: dockerfile
-          value: bundle.Dockerfile
-        - name: labels
-          value:
-            - branch=$(build.git.branch.name)
-            - app_version=$(build.git.branch.name)
-            - commit=$(build.git.lastCommit.id)
-    - name: bundle-merge
-      runAfter:
-        - bundle-amd64
-        - bundle-arm64
-        - code-scan
-      timeout: 30m
-      retries: 0
-      taskRef:
-        kind: ClusterTask
-        name: merge-image-buildkit
-      workspaces:
-        - name: source
-          workspace: source
-      params:
-        - name: container-images
-          value:
-            - build-harbor.alauda.cn/middleware/redis-operator-bundle:$(build.git.version.docker)
-        - name: source-image-digests
-          value:
-            - $(tasks.bundle-amd64.results.ociContainerImageBuild-url)
-            - $(tasks.bundle-arm64.results.ociContainerImageBuild-url)
   finally:
     - name: release-tag
       when:

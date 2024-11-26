@@ -92,7 +92,7 @@ func convertNodeInfoToSentinelNodeInfo(node redis.RedisNode) *rediscli.SentinelM
 	return &mnode
 }
 
-func (s *ManualMonitor) Master(ctx context.Context) (*rediscli.SentinelMonitorNode, error) {
+func (s *ManualMonitor) Master(ctx context.Context, flags ...bool) (*rediscli.SentinelMonitorNode, error) {
 	cm, err := s.client.GetConfigMap(ctx, s.failover.GetNamespace(), s.resourceName)
 	if errors.IsNotFound(err) {
 		return nil, ErrNoMaster

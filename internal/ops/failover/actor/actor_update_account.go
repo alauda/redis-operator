@@ -80,6 +80,7 @@ func (a *actorUpdateAccount) Do(ctx context.Context, val types.RedisInstance) *a
 		users       = inst.Users()
 		defaultUser = users.GetDefaultUser()
 		opUser      = users.GetOpUser()
+		ownRefs     = util.BuildOwnerReferences(inst.Definition())
 	)
 
 	if defaultUser == nil {
@@ -148,7 +149,6 @@ func (a *actorUpdateAccount) Do(ctx context.Context, val types.RedisInstance) *a
 	if inst.Version().IsACLSupported() {
 		if !isAclEnabled {
 			secretName := failoverbuilder.GenerateFailoverACLOperatorSecretName(inst.GetName())
-			ownRefs := util.BuildOwnerReferences(inst.Definition())
 			opUser, err := acl.NewOperatorUser(ctx, a.client, secretName, inst.GetNamespace(), ownRefs, inst.Version().IsACL2Supported())
 			if err != nil {
 				logger.Error(err, "create operator user failed")
@@ -166,7 +166,7 @@ func (a *actorUpdateAccount) Do(ctx context.Context, val types.RedisInstance) *a
 			inst.SendEventf(corev1.EventTypeNormal, config.EventCreateUser, "created operator user to enable acl")
 		} else {
 			if newOpUser, err := acl.NewOperatorUser(ctx, a.client,
-				opUser.Password.SecretName, inst.GetNamespace(), nil, inst.Version().IsACL2Supported()); err != nil {
+				opUser.Password.SecretName, inst.GetNamespace(), ownRefs, inst.Version().IsACL2Supported()); err != nil {
 				logger.Error(err, "create operator user failed")
 				return actor.NewResult(ops.CommandRequeue)
 			} else {
@@ -333,6 +333,7 @@ func (a *actorUpdateAccount) Do(ctx context.Context, val types.RedisInstance) *a
 		data := users.Encode(true)
 		err := a.client.CreateOrUpdateConfigMap(ctx, inst.GetNamespace(), failoverbuilder.NewFailoverAclConfigMap(inst.Definition(), data))
 		if err != nil {
+			logger.Error(err, "update acl configmap failed")
 			return actor.NewResultWithError(sentinel.CommandRequeue, err)
 		}
 		inst.SendEventf(corev1.EventTypeNormal, config.EventUpdatePassword, "updated instance password")

@@ -62,7 +62,6 @@ const (
 	// Volume
 	RedisStorageVolumeName          = "redis-data"
 	RedisTempVolumeName             = "temp"
-	RedisExporterTempVolumeName     = "exporter-temp"
 	RedisOperatorPasswordVolumeName = "operator-password"
 	ConfigVolumeName                = "conf"
 	RedisTLSVolumeName              = "redis-tls"
@@ -473,20 +472,15 @@ func buildContainers(cluster *redisv1alpha1.DistributedRedisCluster, user *user.
 }
 
 func redisExporterContainer(cluster *redisv1alpha1.DistributedRedisCluster, user *user.User) corev1.Container {
-	const DefaultPasswordFile = "/tmp/passwords.json"
-	entrypoint := fmt.Sprintf(`
-if [ -f /account/password ]; then
-    echo "{\"${REDIS_ADDR}\": \"$(cat /account/password)\"}" > %s
-fi
-/redis_exporter --web.listen-address=:%d --web.telemetry-path=%s %s`,
-		DefaultPasswordFile,
-		PrometheusExporterPortNumber,
-		PrometheusExporterTelemetryPath,
-		strings.Join(cluster.Spec.Monitor.Args, " "),
-	)
+	cmd := append([]string{
+		"/redis_exporter",
+		"--web.listen-address",
+		fmt.Sprintf(":%d", PrometheusExporterPortNumber),
+		"--web.telemetry-path",
+		PrometheusExporterTelemetryPath}, cluster.Spec.Monitor.Args...)
 	container := corev1.Container{
 		Name:            ExporterContainerName,
-		Command:         []string{"/bin/sh", "-c", entrypoint},
+		Command:         cmd,
 		Image:           cluster.Spec.Monitor.Image,
 		ImagePullPolicy: builder.GetPullPolicy(cluster.Spec.Monitor.ImagePullPolicy, cluster.Spec.ImagePullPolicy),
 		Ports: []corev1.ContainerPort{
@@ -505,23 +499,19 @@ fi
 	if user.Name == "default" {
 		name = ""
 	}
-	if user.Password.GetSecretName() != "" {
+	container.Env = append(container.Env,
+		corev1.EnvVar{Name: "REDIS_USER", Value: name},
+	)
+	if secretName := user.Password.GetSecretName(); secretName != "" {
 		container.Env = append(container.Env,
-			corev1.EnvVar{Name: OperatorUsername, Value: user.Name},
-			corev1.EnvVar{Name: OperatorSecretName, Value: user.GetPassword().GetSecretName()},
-			corev1.EnvVar{Name: "REDIS_USER", Value: name},
-			corev1.EnvVar{Name: "REDIS_PASSWORD_FILE", Value: DefaultPasswordFile},
-		)
-
-		container.VolumeMounts = append(container.VolumeMounts,
-			corev1.VolumeMount{
-				Name:      RedisOperatorPasswordVolumeName,
-				MountPath: OperatorPasswordVolumeMountPath,
-			},
-			corev1.VolumeMount{
-				Name:      RedisExporterTempVolumeName,
-				MountPath: RedisTmpVolumeMountPath,
-			},
+			corev1.EnvVar{Name: PasswordENV, ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					Key: "password",
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secretName,
+					},
+				},
+			}},
 		)
 	}
 
@@ -674,18 +664,6 @@ func redisVolumes(cluster *redisv1alpha1.DistributedRedisCluster, user *user.Use
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: user.Password.GetSecretName(),
-				},
-			},
-		})
-	}
-
-	if cluster.Spec.Monitor != nil {
-		volumes = append(volumes, corev1.Volume{
-			Name: RedisExporterTempVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{
-					Medium:    corev1.StorageMediumMemory,
-					SizeLimit: resource.NewQuantity(1<<20, resource.BinarySI), //1Mi
 				},
 			},
 		})

@@ -21,16 +21,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/alauda/redis-operator/internal/util"
 	"github.com/alauda/redis-operator/pkg/types/user"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/retry"
 
 	"github.com/alauda/redis-operator/api/core"
 	ruv1 "github.com/alauda/redis-operator/api/middleware/redis/v1"
-	"github.com/alauda/redis-operator/internal/builder"
 	"github.com/alauda/redis-operator/internal/builder/clusterbuilder"
 	"github.com/alauda/redis-operator/internal/builder/failoverbuilder"
 	"github.com/alauda/redis-operator/internal/redis/cluster"
@@ -58,9 +55,9 @@ func (r *RedisUserHandler) Delete(ctx context.Context, inst ruv1.RedisUser, logg
 		return nil
 	}
 
-	name := clusterbuilder.GenerateClusterACLConfigMapName(inst.Spec.RedisName)
-	if inst.Spec.Arch == core.RedisSentinel {
-		name = failoverbuilder.GenerateFailoverACLConfigMapName(inst.Spec.RedisName)
+	name := failoverbuilder.GenerateFailoverACLConfigMapName(inst.Spec.RedisName)
+	if inst.Spec.Arch == core.RedisCluster {
+		name = clusterbuilder.GenerateClusterACLConfigMapName(inst.Spec.RedisName)
 	}
 	if configMap, err := r.k8sClient.GetConfigMap(ctx, inst.Namespace, name); err != nil {
 		if !errors.IsNotFound(err) {
@@ -137,33 +134,11 @@ func (r *RedisUserHandler) Do(ctx context.Context, inst ruv1.RedisUser, logger l
 	}
 
 	passwords := []string{}
-	// operators account skip
-	if inst.Spec.AccountType == ruv1.System {
-		return nil
-	}
-
 	userPassword := &user.Password{}
 	for _, secretName := range inst.Spec.PasswordSecrets {
 		secret, err := r.k8sClient.GetSecret(ctx, inst.Namespace, secretName)
 		if err != nil {
 			return err
-		}
-		if secret.GetLabels() == nil {
-			secret.SetLabels(map[string]string{})
-		}
-
-		if secret.Labels[builder.InstanceNameLabel] != inst.Spec.RedisName ||
-			len(secret.GetOwnerReferences()) == 0 || secret.OwnerReferences[0].UID != inst.GetUID() {
-
-			secret.Labels[builder.ManagedByLabel] = "redis-operator"
-			secret.Labels[builder.InstanceNameLabel] = inst.Spec.RedisName
-			secret.OwnerReferences = util.BuildOwnerReferences(&inst)
-			if err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				return r.k8sClient.UpdateSecret(ctx, inst.Namespace, secret)
-			}); err != nil {
-				logger.Error(err, "update secret owner failed", "secret", secret.Name)
-				return err
-			}
 		}
 		passwords = append(passwords, string(secret.Data["password"]))
 		userPassword = &user.Password{
@@ -213,14 +188,20 @@ func (r *RedisUserHandler) Do(ctx context.Context, inst ruv1.RedisUser, logger l
 			return err
 		}
 		configmap.Data[inst.Spec.Username] = string(info)
-		for _, node := range rcm.Nodes() {
-			_, err := node.SetACLUser(ctx, inst.Spec.Username, passwords, aclRules)
-			if err != nil {
-				logger.Error(err, "acl set user failed", "node", node.GetName())
-				return err
+
+		if inst.Spec.AccountType != ruv1.System {
+			for _, node := range rcm.Nodes() {
+				_, err := node.SetACLUser(ctx, inst.Spec.Username, passwords, aclRules)
+				if err != nil {
+					logger.Error(err, "acl set user failed", "node", node.GetName())
+					return err
+				}
+				logger.V(3).Info("acl set user success", "node", node.GetName())
 			}
-			logger.V(3).Info("acl set user success", "node", node.GetName())
+		} else {
+			logger.V(3).Info("skip system account online update", "username", inst.Spec.Username)
 		}
+
 		if err := r.k8sClient.UpdateConfigMap(ctx, inst.Namespace, configmap); err != nil {
 			logger.Error(err, "update configmap failed", "configmap", configmap.Name)
 			return err
@@ -252,14 +233,20 @@ func (r *RedisUserHandler) Do(ctx context.Context, inst ruv1.RedisUser, logger l
 			return err
 		}
 		configmap.Data[inst.Spec.Username] = string(info)
-		for _, node := range rfm.Nodes() {
-			_, err := node.SetACLUser(ctx, inst.Spec.Username, passwords, inst.Spec.AclRules)
-			if err != nil {
-				logger.Error(err, "acl set user failed", "node", node.GetName())
-				return err
+
+		if inst.Spec.AccountType != ruv1.System {
+			for _, node := range rfm.Nodes() {
+				_, err := node.SetACLUser(ctx, inst.Spec.Username, passwords, inst.Spec.AclRules)
+				if err != nil {
+					logger.Error(err, "acl set user failed", "node", node.GetName())
+					return err
+				}
+				logger.V(3).Info("acl set user success", "node", node.GetName())
 			}
-			logger.V(3).Info("acl set user success", "node", node.GetName())
+		} else {
+			logger.V(3).Info("skip system account online update", "username", inst.Spec.Username)
 		}
+
 		if err := r.k8sClient.UpdateConfigMap(ctx, inst.Namespace, configmap); err != nil {
 			logger.Error(err, "update configmap failed", "configmap", configmap.Name)
 			return err

@@ -96,7 +96,9 @@ func MergeConfig(ctx context.Context, c *cli.Context, client *kubernetes.Clients
 				bytes.HasPrefix(line, []byte("sentinel announce-ip")) ||
 				bytes.HasPrefix(line, []byte("sentinel announce-port")) ||
 				bytes.HasPrefix(line, []byte("sentinel sentinel-user")) ||
-				bytes.HasPrefix(line, []byte("sentinel sentinel-pass")) {
+				bytes.HasPrefix(line, []byte("sentinel sentinel-pass")) ||
+				// ignore known-replica
+				bytes.HasPrefix(line, []byte("sentinel known-replica")) {
 				continue
 			}
 			localFileData = append(localFileData, line...)

@@ -1,0 +1,24 @@
+{{- if not .Values.issuer.name }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: redis-operator-selfsigned-issuer
+spec:
+  selfSigned: {}
+{{- end }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: redis-operator-service-cert
+spec:
+  commonName: redis-operator-service.{{ .Release.Namespace }}
+  dnsNames:
+  - redis-operator-service.{{ .Release.Namespace }}
+  - redis-operator-service.{{ .Release.Namespace }}.svc
+  duration: 17520h0m0s
+  issuerRef:
+    kind: {{ .Values.issuer.name | default "Issuer" }}
+    name: {{ .Values.issuer.name | default "redis-operator-selfsigned-issuer" }}
+  renewBefore: 720h0m0s
+  secretName: redis-operator-service-cert

@@ -33,7 +33,6 @@ import (
 	"github.com/alauda/redis-operator/internal/builder"
 	"github.com/alauda/redis-operator/internal/builder/clusterbuilder"
 	"github.com/alauda/redis-operator/internal/builder/failoverbuilder"
-	"github.com/alauda/redis-operator/internal/config"
 	"github.com/alauda/redis-operator/internal/redis/failover/monitor"
 	"github.com/alauda/redis-operator/internal/util"
 	clientset "github.com/alauda/redis-operator/pkg/kubernetes"
@@ -768,9 +767,9 @@ func (s *RedisFailover) IsResourceFullfilled(ctx context.Context) (bool, error) 
 		stsKey: {
 			failoverbuilder.GetFailoverStatefulSetName(s.GetName()),
 		},
-		sentinelKey: {
-			s.GetName(),
-		},
+	}
+	if s.IsBindedSentinel() {
+		resources[sentinelKey] = []string{s.GetName()}
 	}
 
 	if s.Spec.Redis.Expose.ServiceType == corev1.ServiceTypeLoadBalancer ||
@@ -793,26 +792,6 @@ func (s *RedisFailover) IsResourceFullfilled(ctx context.Context) (bool, error) 
 			} else if err != nil {
 				s.logger.Error(err, "get resource failed", "kind", gvk.Kind, "target", util.ObjectKey(s.GetNamespace(), name))
 				return false, err
-			}
-		}
-	}
-
-	name := failoverbuilder.GetFailoverStatefulSetName(s.GetName())
-	if sts, err := s.client.GetStatefulSet(ctx, s.GetNamespace(), name); err != nil {
-		s.logger.Error(err, "load statefulset failed", "target", util.ObjectKey(s.GetNamespace(), name))
-		return false, err
-	} else {
-		redisToolsImage := config.GetRedisToolsImage(s)
-		if redisToolsImage == "" {
-			return false, fmt.Errorf("redis-tools image not found")
-		}
-		spec := sts.Spec.Template.Spec
-		for _, container := range append(append([]corev1.Container{}, spec.InitContainers...), spec.Containers...) {
-			if !strings.Contains(container.Image, "middleware/redis-tools") {
-				continue
-			}
-			if container.Image != redisToolsImage {
-				return false, nil
 			}
 		}
 	}
