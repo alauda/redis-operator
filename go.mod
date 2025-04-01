@@ -1,11 +1,11 @@
 module github.com/alauda/redis-operator
 
 go 1.22
-toolchain go1.22.5
+toolchain go1.24.1
 
 require (
 	github.com/Masterminds/semver/v3 v3.3.1
-	github.com/alicebob/miniredis/v2 v2.33.0
+	github.com/alicebob/miniredis/v2 v2.34.0
 	github.com/cert-manager/cert-manager v1.9.1
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-logr/logr v1.4.2
@@ -26,7 +26,7 @@ require (
 )
 
 require (
-	github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a // indirect
+	github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
