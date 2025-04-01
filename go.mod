@@ -1,7 +1,7 @@
 module github.com/alauda/redis-operator
 
 go 1.22
-toolchain go1.22.5
+toolchain go1.24.1
 
 require (
 	github.com/Masterminds/semver/v3 v3.3.1
@@ -17,7 +17,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.27.5
 	go.uber.org/zap v1.25.0
-	gotest.tools/v3 v3.0.3
+	gotest.tools/v3 v3.5.2
 	k8s.io/api v0.28.11
 	k8s.io/apimachinery v0.28.11
 	k8s.io/client-go v0.28.11
