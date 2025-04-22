@@ -1,7 +1,8 @@
 module github.com/alauda/redis-operator
 
-go 1.22
-toolchain go1.22.5
+go 1.22.0
+
+toolchain go1.24.2
 
 require (
 	github.com/Masterminds/semver/v3 v3.3.1
