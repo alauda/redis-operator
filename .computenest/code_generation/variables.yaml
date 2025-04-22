@@ -1,0 +1,27 @@
+ReleaseName: harbor
+HelmArtifactId: artifact-xxx
+HelmArtifactVersion: draft
+Parameters:
+  - Name: AdminPassword
+    NoEcho: true
+    Type: String
+    Label: 管理员密码
+    AssociationProperty: ALIYUN::ECS::Instance::Password
+Values:
+  service:
+    type: LoadBalancer
+  postgresql:
+    enabled: true
+    adminPassword:
+      Ref: AdminPassword
+    primary:
+      persistence:
+        enabled: true
+        storageClass: alicloud-disk-essd
+        size: 40Gi
+Outputs:
+  - Kind: Service
+    Name: harbor-server
+    DisplayName: Endpoint
+    JsonPath: $.status.loadBalancer.ingress[0].ip
+    Expression: https://${OutputValue}:8080

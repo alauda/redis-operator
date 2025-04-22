@@ -1,0 +1,20 @@
+Service:
+  RegionId: cn-hangzhou
+  DeployType: ros
+  DeployMetadata:
+    SupplierDeployMetadata:
+      HelmChartArtifactRelation:
+        {% raw %}'{{computenest::helmchart::chartUrl}}': {% endraw %}
+          ArtifactId: {{ HelmArtifactId }}
+          ArtifactVersion: {{ HelmArtifactVersion }}
+    TemplateConfigs:
+      - Name: ack
+        Url: 'ros_templates/template.yaml'
+        AllowedRegions: []
+  ServiceType: private
+  ServiceInfo:
+    Locale: zh-CN
+    Image: 'resources/icons/service_logo.png'
+    Name: Helm私有化部署
+  ShareType: Public
+  ApprovalType: Manual

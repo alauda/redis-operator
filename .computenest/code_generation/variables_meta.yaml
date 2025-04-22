@@ -1,0 +1,177 @@
+ROSTemplateFormatVersion: '2015-09-01'
+# 定义参数
+Parameters:
+  Parameters:
+    Label:
+      en: Customized service parameters
+      zh-cn: 自定义服务参数
+    Description:
+      en: Customized service parameters, can be referenced in command content。</br>Name is english name of parameter, cannot contain space or special characters</br>Label is parameter name user will see</br>Type is parameter type</br>AllowedValues are allowed parameter values, empty for no limit</br>NoEcho is option for hidding parameter value, such as password</br>AssociationProperty please refer to <a href='https://www.alibabacloud.com/help/en/ros/user-guide/associationproperty-and-associationpropertymetadata' target='_blank'>document</a>
+      zh-cn: 自定义的服务参数，以${Parameter}的形式引用参数。</br>AssociationProperty的含义请参考<a href='https://www.alibabacloud.com/help/zh/ros/user-guide/associationproperty-and-associationpropertymetadata' target='_blank'>官网文档</a>
+    Type: Json
+    AssociationProperty: List[Parameters]
+    AssociationPropertyMetadata:
+      Parameters:
+        Name:
+          Label:
+            en: English Parameter Name
+            zh-cn: 英文参数名
+          Type: String
+        Label:
+          Label:
+            en: The parameter label for user
+            zh-cn: 用户见到的参数名
+          Type: String
+        Type:
+          Label:
+            en: Parameter Type 
+            zh-cn: 类型
+          Type: String
+          AllowedValues:
+            - Number
+            - String
+            - Boolean
+            - Json
+        AllowedValues:
+          Label:
+            en: Allowed values
+            zh-cn: 可选值
+          Type: Json
+          AssociationProperty: List
+          AssociationPropertyMetadata:
+            Multiple: true
+          Default: Null
+          Required: false
+        NoEcho:
+          Label:
+            en: No Echo
+            zh-cn: 隐藏输入的参数值（敏感参数）
+          Type: Boolean
+          Default: false
+          AllowedValues:
+            - true
+            - false
+        AssociationProperty:
+          Type: String
+          Default: Null
+          Required: false
+          AssociationProperty: AssociationProperty
+    Default:
+      - Name: AdminPassword
+        NoEcho: true
+        Type: String
+        Label: 管理员密码
+        AssociationProperty: ALIYUN::ECS::Instance::Password
+  ReleaseName:
+    Label:
+      en: Helm release name
+      zh-cn: Helm release名称
+    Type: String
+    Default: wordpress
+  HelmArtifactId:
+    Type: String
+    Label:
+      en: Helm artifact
+      zh-cn: HelmChart部署物
+    Description:
+      en: Helm chart will be deployed to ACK cluster
+      zh-cn: Helm chart将会被部署到容器服务ACK集群中
+    AssociationProperty: ALIYUN::ComputeNest::Artifact::ArtifactId
+    AssociationPropertyMetadata:
+      IsSupplier: true
+      ArtifactType: HelmChart
+  HelmArtifactVersion:
+    Type: String
+    Label:
+      en: Helm chart artifact version
+      zh-cn: HelmChart部署物版本
+    AssociationProperty: ALIYUN::ComputeNest::Artifact::ArtifactIdVersion
+    AssociationPropertyMetadata:
+      IsSupplier: true
+      ArtifactId: ${HelmArtifactId}
+  Values:
+    Label:
+      en: Helm values.yaml file content
+      zh-cn: Helm values.yaml文件内容
+    Type: String
+    AssociationProperty: Code
+    AssociationPropertyMetadata:
+      Language: yaml
+    Default: |
+      mariadb:
+        primary:
+          persistence:
+            enabled: true
+            storageClass: alicloud-disk-essd
+            size: 100Gi
+      persistence:
+        enabled: false
+      wordpressUsername: admin
+      wordpressPassword:
+        # 通过Ref: Parameter来引用参数值
+        Ref: AdminPassword
+  Outputs:
+    Label:
+      en: Service outputs
+      zh-cn: 服务输出
+    Type: Json
+    AssociationProperty: List[Parameters]
+    AssociationPropertyMetadata:
+      Parameters:
+        DisplayName:
+          Label:
+            en: Name of output
+            zh-cn: 输出名
+          Type: String
+        Kind:
+          Label:
+            en: Kind of K8S resource
+            zh-cn: K8S资源类型
+          Type: String
+          AllowedValues:
+            - Service
+            - Deployment
+            - StatefulSet
+            - ConfigMap
+            - Ingress
+        Name:
+          Label:
+            en: Name of K8S resource
+            zh-cn: K8S资源名
+          Type: String
+        JsonPath:
+          Label:
+            en: JsonPath of K8S resource configuration
+            zh-cn: K8S资源配置JsonPath
+          Type: String
+        Expression:
+          Label:
+            en: Expression for output value
+            zh-cn: 输出值表达式,${OutputValue}指代通过JsonPath获取的值
+          Type: String
+    Default:
+      - Kind: Service
+        Name: wordpress
+        DisplayName: Endpoint
+        JsonPath: $.status.loadBalancer.ingress[0].ip
+        Expression: http://${OutputValue}
+Metadata:
+  ALIYUN::ROS::Interface:
+    # 定义资源分组，创建服务实例时，同一分组的参数分布在一起
+    ParameterGroups:
+      - Parameters:
+          - Label: Helm Chart部署物
+            Items:
+              - HelmArtifactId
+              - HelmArtifactVersion
+          - ReleaseName
+          - Parameters
+          - Values
+        Label:
+          en: Deployment Configuration
+          zh-cn: 部署配置
+      - Parameters:
+          - Outputs
+        Label:
+          en: Deployment Configuration
+          zh-cn: 输出配置
