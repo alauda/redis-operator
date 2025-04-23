@@ -4,17 +4,32 @@ Service:
   DeployMetadata:
     SupplierDeployMetadata:
       HelmChartArtifactRelation:
-        '{{computenest::helmchart::chartUrl}}': 
-          ArtifactId: artifact-xxx
-          ArtifactVersion: draft
+        '{{ computenest::helmchart::redis-operator }}':
+          ArtifactId: ${Artifact.Artifact_1.ArtifactId}
+          ArtifactVersion: ${Artifact.Artifact_1.ArtifactVersion}
     TemplateConfigs:
-      - Name: ack
-        Url: 'ros_templates/template.yaml'
-        AllowedRegions: []
+    - Name: 容器集群版
+      Url: 'ros_templates/template.yaml'
+      AllowedRegions:
+      - ap-southeast-1
   ServiceType: private
   ServiceInfo:
-    Locale: zh-CN
-    Image: 'resources/icons/service_logo.png'
-    Name: Helm私有化部署
-  ShareType: Public
-  ApprovalType: Manual
+  - Locale: zh-CN
+    Name: alaudadev/redis-operator-j2fq
+    ShortDescription: Service description
+    Image: 
+      https://service-info-public.oss-cn-hangzhou.aliyuncs.com/1853370294850618/service-image/bfd30cc4-e959-4093-b5cb-77a05058b911.png
+    SoftwareInfos: []
+Artifact:
+  Artifact_1:
+    ArtifactType: HelmChart
+    ArtifactName: redis-operator-helm-chart
+    ArtifactProperty:
+      RepoName: ${HelmChartBuilder.HelmChart_1.RepoName}
+      Tag: ${HelmChartBuilder.HelmChart_1.Tag}
+      RepoType: Public
+HelmChartBuilder:
+  HelmChart_1:
+    HelmChartPath: 'resources/artifact_resources/helm_chart/redis-operator-0.0.0-latest.tgz'
+    RepoName: redis-operator
+    Tag: 0.0.0-latest

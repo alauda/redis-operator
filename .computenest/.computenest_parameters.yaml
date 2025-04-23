@@ -1,13 +1,12 @@
 ChartValues: {}
 HelmChartPath: charts/redis-operator
-RuntimeType: Kubernetes
 ServiceType: private
 ArtifactSourceType: HelmChart
 ServiceBuildRegion: ap-southeast-1
 RepoName: alauda/redis-operator
-RegionId: cn-hangzhou
+RegionId: ap-southeast-1
 CustomParameters: ''
-OutputType: HelmNotes
+OutputType: ClusterUrl
 Owner: chideat
 Branch: aliyun-computenest
 Platform: github
