@@ -1,27 +1,40 @@
-ReleaseName: harbor
-HelmArtifactId: artifact-xxx
+ReleaseName: redis-operator
+HelmArtifactId: artifact-redis-operator
 HelmArtifactVersion: draft
 Parameters:
-  - Name: AdminPassword
-    NoEcho: true
+  - Name: Namespace
     Type: String
-    Label: 管理员密码
-    AssociationProperty: ALIYUN::ECS::Instance::Password
+    Label:
+      en: Deployment Namespace
+      zh-cn: 部署的命名空间
+    Description:
+      en: The namespace where the Redis Operator will be deployed.
+      zh-cn: 部署 Redis Operator 的命名空间。
+    Default: redis-system
+    AllowedPattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+    Required: true
+  - Name: ReplicaCount
+    Type: Number
+    Label:
+      en: Redis Operator Replica Count
+      zh-cn: Redis Operator 副本数
+    Required: true
+    Default: 1
+    MaxValue: 3
+    MinValue: 1
+  - Name: IssuerName
+    Type: String
+    Label:
+      en: Webhook TLS Certificate Cluster Issuer Name
+      zh-cn: Webhook TLS 集群证书颁发者
+    Required: true
 Values:
-  service:
-    type: LoadBalancer
-  postgresql:
-    enabled: true
-    adminPassword:
-      Ref: AdminPassword
-    primary:
-      persistence:
-        enabled: true
-        storageClass: alicloud-disk-essd
-        size: 40Gi
-Outputs:
-  - Kind: Service
-    Name: harbor-server
-    DisplayName: Endpoint
-    JsonPath: $.status.loadBalancer.ingress[0].ip
-    Expression: https://${OutputValue}:8080
+  namespace:
+    Ref: Namespace
+  issuer:
+    name:
+      Ref: Issuer
+    kind: ClusterIssuer
+  redisOperator:
+    replicaCount:
+      Ref: ReplicaCount

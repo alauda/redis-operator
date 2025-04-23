@@ -1,5 +1,5 @@
 Service:
-  RegionId: cn-hangzhou
+  RegionId: ap-southeast-1
   DeployType: ros
   DeployMetadata:
     SupplierDeployMetadata:
@@ -15,6 +15,19 @@ Service:
   ServiceInfo:
     Locale: zh-CN
     Image: 'resources/icons/service_logo.png'
-    Name: Helm私有化部署
+    Name: RedisOperator 部署
   ShareType: Public
   ApprovalType: Manual
+Artifact:
+  ArtifactRedisOperatorChart:
+    ArtifactType: HelmChart
+    ArtifactName: redis-operator-chart
+    Description: Redis Operator 部署物
+    ArtifactProperty:
+      RepoName: ${HelmChartBuilder.HelmChart_1.RepoName}
+      Tag: ${HelmChartBuilder.HelmChart_1.Tag}
+HelmChartBuilder:
+  HelmChart_1:
+    HelmChartPath: 'resources/artifact_resources/helm_chart/redis-operator-chart-3.18.0.tgz'
+    RepoName: redis-operator-chart
+    Tag: 3.18.0

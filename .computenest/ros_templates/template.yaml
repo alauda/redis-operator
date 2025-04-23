@@ -1,38 +1,25 @@
 ROSTemplateFormatVersion: '2015-09-01'
 Description:
-  en: 使用Helm Chart进行应用部署,同时支持Ack、Acs集群
-  zh-cn: Use Helm Chart for application deployment, and support Ack and Acs clusters
+  en: 新建ack部署helm
+  zh-cn: new ack deploy helm
 Parameters:
-  CsOptions:
-    Type: String
-    AllowedValues:
-      - ExistCs
-      - NewAck
-      - NewAcs
-    AssociationPropertyMetadata:
-      ValueLabelMapping:
-        ExistCs:
-          zh-cn: 已有集群
-          en: Existing Cluster
-        NewAck:
-          zh-cn: 新建ACK集群
-          en: New ACK
-        NewAcs:
-          zh-cn: 新建ACS集群
-          en: New ACS
+  CreateAck:
+    Type: Boolean
+    Description:
+      en: An existing ack cluster can be deployed by entering the cluster id. If there is no current cluster, create a new ack cluster before deploying
+      zh-cn: 已有ack集群输入集群id即可部署，当前无集群先新建ack集群再进行部署
     Label:
-      en: Cluster Option
-      zh-cn: 集群选项
-    Required: true
-    Default: ExistCs
+      en: Wether create ack cluster
+      zh-cn: 是否新建ack集群
+    Default: true
   ClusterId:
     Type: String
     Description:
       en: The ID of Kubernetes ClusterId in which application deployed.
       zh-cn: 部署应用程序的K8s集群ID
     AllowedPattern: '[0-9a-z]+$'
-    Required: true
     Default: null
+    Required: true
     Label:
       en: Kubernetes ClusterId
       zh-cn: K8s集群ID
@@ -42,8 +29,8 @@ Parameters:
       Visible:
         Condition:
           Fn::Equals:
-            - ${CsOptions}
-            - ExistCs
+            - ${CreateAck}
+            - false
   PayType:
     Type: String
     Label:
@@ -59,8 +46,8 @@ Parameters:
       Visible:
         Condition:
           Fn::Equals:
-            - ${CsOptions}
-            - NewAck
+            - ${CreateAck}
+            - true
   PayPeriodUnit:
     Type: String
     Label:
@@ -76,8 +63,8 @@ Parameters:
         Condition:
           Fn::And:
             - Fn::Equals:
-                - ${CsOptions}
-                - NewAck
+                - ${CreateAck}
+                - true
             - Fn::Not:
                 Fn::Equals:
                   - ${PayType}
@@ -107,8 +94,8 @@ Parameters:
         Condition:
           Fn::And:
             - Fn::Equals:
-                - ${CsOptions}
-                - NewAck
+                - ${CreateAck}
+                - true
             - Fn::Not:
                 Fn::Equals:
                   - ${PayType}
@@ -119,39 +106,13 @@ Parameters:
     Label:
       en: Zone ID
       zh-cn: 可用区
-    Required: true
-    Default: null
+    Default: ap-southeast-1
     AssociationPropertyMetadata:
       Visible:
         Condition:
-          Fn::Not:
-            Fn::Equals:
-              - ${CsOptions}
-              - ExistCs
-  VpcOption:
-    Type: String
-    AllowedValues:
-      - NewVPC
-      - ExistingVPC
-    AssociationPropertyMetadata:
-      ValueLabelMapping:
-        NewVPC:
-          zh-cn: 新建专有网络
-          en: New VPC
-        ExistingVPC:
-          zh-cn: 已有专有网络
-          en: Existing VPC
-      Visible:
-        Condition:
-          Fn::Not:
-            Fn::Equals:
-              - ${CsOptions}
-              - ExistCs
-    Label:
-      en: Select Existing or New VPC
-      zh-cn: 选择已有/新建的专有网络
-    Required: true
-    Default: NewVPC
+          Fn::Equals:
+            - ${CreateAck}
+            - true
   VpcId:
     Type: String
     Label:
@@ -162,21 +123,15 @@ Parameters:
         Please search the ID starting with (vpc-xxx) from console-Virtual
         Private Cloud
       zh-cn: 现有虚拟专有网络的实例ID
-    Required: true
-    Default: null
+    Default: ''
     AssociationProperty: 'ALIYUN::ECS::VPC::VPCId'
     AssociationPropertyMetadata:
       RegionId: '${RegionId}'
       Visible:
         Condition:
-          Fn::And:
-            - Fn::Not:
-                Fn::Equals:
-                  - ${CsOptions}
-                  - ExistCs
-            - Fn::Equals:
-                  - ExistingVPC
-                  - ${VpcOption}
+          Fn::Equals:
+            - ${CreateAck}
+            - true
   VSwitchId:
     Type: String
     Label:
@@ -187,67 +142,16 @@ Parameters:
         Instance ID of existing business network switches, console-Virtual
         Private Cloud-VSwitches under query
       zh-cn: 现有业务网络交换机的实例ID
-    Required: true
-    Default: null
+    Default: ''
     AssociationProperty: 'ALIYUN::ECS::VSwitch::VSwitchId'
     AssociationPropertyMetadata:
       VpcId: '${VpcId}'
       ZoneId: '${ZoneId}'
       Visible:
         Condition:
-          Fn::And:
-            - Fn::Not:
-                Fn::Equals:
-                  - ${CsOptions}
-                  - ExistCs
-            - Fn::Equals:
-                  - ExistingVPC
-                  - ${VpcOption}
-  VpcCidrBlock:
-    Type: String
-    Label:
-      en: VPC CIDR IPv4 Block
-      zh-cn: 专有网络IPv4网段
-    Description:
-      zh-cn: VPC的ip地址段范围，<br>您可以使用以下的ip地址段或其子网:<br><font color='green'>[10.0.0.0/8]</font><br><font color='green'>[172.16.0.0/12]</font><br><font color='green'>[192.168.0.0/16]</font>
-      en: 'The ip address range of the VPC in the CidrBlock form; <br>You can use the following ip address ranges and their subnets: <br><font color=''green''>[10.0.0.0/8]</font><br><font color=''green''>[172.16.0.0/12]</font><br><font color=''green''>[192.168.0.0/16]</font>'
-    Default: 192.168.0.0/16
-    Required: true
-    AssociationProperty: ALIYUN::VPC::VPC::CidrBlock
-    AssociationPropertyMetadata:
-      Visible:
-        Condition:
-          Fn::And:
-            - Fn::Not:
-                Fn::Equals:
-                  - ${CsOptions}
-                  - ExistCs
-            - Fn::Equals:
-                - NewVPC
-                - ${VpcOption}
-  VSwitchCidrBlock:
-    Type: String
-    Label:
-      en: VSwitch CIDR Block
-      zh-cn: 交换机子网网段
-    Description:
-      zh-cn: 必须属于VPC的子网段。
-      en: Must belong to the subnet segment of VPC.
-    Default: 192.168.0.0/24
-    Required: true
-    AssociationProperty: ALIYUN::VPC::VSwitch::CidrBlock
-    AssociationPropertyMetadata:
-      VpcCidrBlock: VpcCidrBlock
-      Visible:
-        Condition:
-          Fn::And:
-            - Fn::Not:
-                Fn::Equals:
-                  - ${CsOptions}
-                  - ExistCs
-            - Fn::Equals:
-                - NewVPC
-                - ${VpcOption}
+          Fn::Equals:
+            - ${CreateAck}
+            - true
   LoginPassword:
     NoEcho: true
     Type: String
@@ -265,8 +169,8 @@ Parameters:
       Visible:
         Condition:
           Fn::Equals:
-            - ${CsOptions}
-            - NewAck
+            - ${CreateAck}
+            - true
     AllowedPattern: ^[a-zA-Z0-9-\(\)\`\~\!\@\#\$\%\^\&\*\_\-\+\=\|\{\}\[\]\:\;\<\>\,\.\?\/]*$
     MinLength: 8
     MaxLength: 30
@@ -276,49 +180,33 @@ Parameters:
     Label:
       en: Worker Nodes Types
       zh-cn: Worker节点规格
-    Default: null
-    Required: true
     AssociationProperty: ALIYUN::ECS::Instance::InstanceType
     AssociationPropertyMetadata:
-      ZoneId: ${ZoneId}
-      CreateACKClusterParams:
-        NetworkPlugin: ${AckNetworkPlugin}
       Visible:
         Condition:
           Fn::Equals:
-            - ${CsOptions}
-            - NewAck
-  WorkerInstanceCount:
-    Default: 3
-    Type: Number
-    Label:
-      zh-cn: 实例节点数
-      en: The count for cpu instance.
-    MinValue: 1
-    MaxValue: 5000
-    AssociationPropertyMetadata:
-      Visible:
-        Condition:
-          Fn::Equals:
-            - ${CsOptions}
-            - NewAck
+            - ${CreateAck}
+            - true
+    Default: ecs.g6.large
   WorkerSystemDiskCategory:
     Type: String
-    Default: null
-    Required: true
+    AllowedValues:
+      - cloud_efficiency
+      - cloud_ssd
+      - cloud_essd
     AssociationProperty: ALIYUN::ECS::Disk::SystemDiskCategory
     AssociationPropertyMetadata:
-      RegionId: ${RegionId}
-      ZoneId: ${ZoneId}
+      LocaleKey: DiskCategory
       InstanceType: ${WorkerInstanceType}
       Visible:
         Condition:
           Fn::Equals:
-            - ${CsOptions}
-            - NewAck
+            - ${CreateAck}
+            - true
     Label:
       en: Worker System Disk Category
       zh-cn: Worker 系统盘磁盘类型
+    Default: cloud_essd
   WorkerSystemDiskSize:
     Type: Number
     Label:
@@ -330,26 +218,23 @@ Parameters:
       Visible:
         Condition:
           Fn::Equals:
-            - ${CsOptions}
-            - NewAck
+            - ${CreateAck}
+            - true
   AckNetworkPlugin:
     Type: String
     Label:
       en: ack plugin network
       zh-cn: ack网络插件
     AllowedValues:
-      - flannel
-      - terway-eniip
+      - Flannel
+      - Terway
     AssociationPropertyMetadata:
-      ValueLabelMapping:
-        flannel: flannel
-        terway-eniip : terway
       Visible:
         Condition:
           Fn::Equals:
-            - ${CsOptions}
-            - NewAck
-    Default: flannel
+            - ${CreateAck}
+            - true
+    Default: Flannel
   PodCidr:
     Type: String
     Description:
@@ -364,12 +249,36 @@ Parameters:
         Condition:
           Fn::And:
             - Fn::Equals:
-                - ${CsOptions}
-                - NewAck
+                - ${CreateAck}
+                - true
             - Fn::Equals:
                 - ${AckNetworkPlugin}
-                - flannel
-    Default: 10.0.0.0/16
+                - Flannel
+    Default: 172.20.0.0/20
+  PodVswitchId:
+    Type: String
+    Label:
+      en: VSwitch ID
+      zh-cn: pod交换机实例ID
+    Description:
+      en: >-
+        Instance ID of existing business network switches, console-Virtual
+        Private Cloud-VSwitches under query
+      zh-cn: 建议选择网段掩码不大于 19 的虚拟交换机
+    Default: ''
+    AssociationProperty: 'ALIYUN::ECS::VSwitch::VSwitchId'
+    AssociationPropertyMetadata:
+      VpcId: '${VpcId}'
+      ZoneId: '${ZoneId}'
+      Visible:
+        Condition:
+          Fn::And:
+            - Fn::Equals:
+                - ${CreateAck}
+                - true
+            - Fn::Equals:
+                - ${AckNetworkPlugin}
+                - Terway
   ServiceCidr:
     Type: String
     Description:
@@ -380,165 +289,194 @@ Parameters:
       en: Service CIDR
     AssociationProperty: ALIYUN::CS::ManagedKubernetesCluster::ServiceCidr
     AssociationPropertyMetadata:
-      VpcId: ${VpcId}
-      RegionId: ${RegionId}
-      ClusterType: ManagedKubernetes
-      NodeCidrMask: 26
-      Addons:
-        - name: flannel
-      ContainerCidr: ${PodCidr}
       Visible:
         Condition:
-          Fn::Not:
-            Fn::Equals:
-              - ${CsOptions}
-              - ExistCs
+          Fn::Equals:
+            - ${CreateAck}
+            - true
     Default: 172.16.0.0/16
+  Namespace:
+    Type: String
+    Label: {'en': 'Deployment Namespace', 'zh-cn': '部署的命名空间'}
+
+    Default: redis-system
+
+
+  ReplicaCount:
+    Type: Number
+    Label: {'en': 'Redis Operator Replica Count', 'zh-cn': 'Redis Operator 副本数'}
+
+    Default: 1
+
+    MinValue: 1
+
+    MaxValue: 3
+
+
+  IssuerName:
+    Type: String
+    Label: {'en': 'Webhook TLS Certificate Cluster Issuer Name', 'zh-cn': 'Webhook TLS 集群证书颁发者'}
+
+
 Conditions:
-  CreateClusterCondition:
-    Fn::Or:
-      - Fn::Equals:
-          - NewAck
-          - Ref: CsOptions
-      - Fn::Equals:
-          - NewAcs
-          - Ref: CsOptions
+  CreateAck:
+    Fn::Equals:
+      - true
+      - Ref: CreateAck
   FlannelPluginCondition:
     Fn::Equals:
       - Ref: AckNetworkPlugin
-      - flannel
+      - Flannel
+  TerwayPluginCondition:
+    Fn::Equals:
+      - Ref: AckNetworkPlugin
+      - Terway
 Resources:
-  VpcModule:
-    Condition: CreateClusterCondition
-    Type: MODULE::ACS::ComputeNest::VpcAndVSwitch
-    Version: default
+  VpcsDataSource:
+    Type: DATASOURCE::VPC::Vpcs
     Properties:
-      ZoneId:
-        Ref: ZoneId
-      VpcOption:
-        Ref: VpcOption
+      VpcIds:
+        - Ref: VpcId
+  EcsSecurityGroup:
+    Type: ALIYUN::ECS::SecurityGroup
+    Condition: CreateAck
+    Properties:
+      SecurityGroupName:
+        Ref: ALIYUN::StackName
       VpcId:
         Ref: VpcId
-      VSwitchId:
-        Ref: VSwitchId
-      VSwitchCidrBlock:
-        Ref: VSwitchCidrBlock
-      VpcCidrBlock:
-        Ref: VpcCidrBlock
-  AckOrAcsClusterModule:
-    DependsOn:
-      - VpcModule
-    Type: MODULE::ACS::ComputeNest::AckOrAcsCluster
-    Version: default
-    Properties:
-      CsOptions:
-        Ref: CsOptions
-      ClusterId:
-        Ref: ClusterId
-      VpcId:
-        Fn::GetAtt:
-          - VpcModule
-          - VpcId
-      VSwitchId:
-        Fn::GetAtt:
-          - VpcModule
-          - VSwitchId
-      ClusterSpec: ack.pro.small
-      AckNetworkPlugin:
+      SecurityGroupEgress:
+        - PortRange: '-1/-1'
+          Priority: 1
+          IpProtocol: all
+          DestCidrIp: 0.0.0.0/0
+          NicType: intranet
+      SecurityGroupIngress:
         Fn::If:
           - FlannelPluginCondition
-          - flannel
-          - terway
-      PodVSwitchId:
-        Fn::GetAtt:
-          - VpcModule
-          - VSwitchId
-      PodCidr:
-        Ref: PodCidr
-      ServiceCidr:
-        Ref: ServiceCidr
-      ZoneId:
-        Ref: ZoneId
-      PayType:
+          - - PortRange: '-1/-1'
+              Priority: 1
+              IpProtocol: all
+              SourceCidrIp:
+                Ref: PodCidr
+              Description: pod网络访问开放
+              NicType: intranet
+            - PortRange: '-1/-1'
+              Priority: 1
+              IpProtocol: all
+              SourceCidrIp:
+                Fn::Jq:
+                  - First
+                  - .[].CidrBlock
+                  - 'Fn::GetAtt':
+                      - VpcsDataSource
+                      - Vpcs
+              Description: vpc网络访问开放
+              NicType: intranet
+            - PortRange: '-1/-1'
+              Priority: 1
+              IpProtocol: icmp
+              SourceCidrIp: 0.0.0.0/0
+              Description: icmp协议端口放开
+              NicType: intranet
+          - - PortRange: '-1/-1'
+              Priority: 1
+              IpProtocol: all
+              SourceCidrIp:
+                Fn::Jq:
+                  - First
+                  - .[].CidrBlock
+                  - 'Fn::GetAtt':
+                      - VpcsDataSource
+                      - Vpcs
+              Description: vpc网络访问开放
+              NicType: intranet
+            - PortRange: '-1/-1'
+              Priority: 1
+              IpProtocol: icmp
+              SourceCidrIp: 0.0.0.0/0
+              Description: icmp协议端口放开
+              NicType: intranet
+  ManagedKubernetesCluster:
+    Type: ALIYUN::CS::ManagedKubernetesCluster
+    Condition: CreateAck
+    Properties:
+      Name:
+        Ref: ALIYUN::StackName
+      ChargeType:
         Ref: PayType
-      PayPeriod:
+      Period:
         Ref: PayPeriod
-      PayPeriodUnit:
+      PeriodUnit:
         Ref: PayPeriodUnit
-      WorkerInstanceCount:
-        Ref: WorkerInstanceCount
+      VSwitchIds:
+        - Ref: VSwitchId
+      VpcId:
+        Ref: VpcId
       WorkerInstanceTypes:
         - Ref: WorkerInstanceType
+      NumOfNodes: 3
+      ClusterSpec: ack.pro.small
+      ContainerCidr:
+        Fn::If:
+          - FlannelPluginCondition
+          - Ref: PodCidr
+          - Ref: ALIYUN::NoValue
+      ServiceCidr:
+        Ref: ServiceCidr
+      PodVswitchIds:
+        Fn::If:
+          - TerwayPluginCondition
+          - - Ref: PodVswitchId
+          - Ref: ALIYUN::NoValue
+      ZoneIds:
+        - Ref: ZoneId
+      SecurityGroupId:
+        Ref: EcsSecurityGroup
       WorkerSystemDiskCategory:
         Ref: WorkerSystemDiskCategory
       WorkerSystemDiskSize:
         Ref: WorkerSystemDiskSize
       LoginPassword:
         Ref: LoginPassword
-  FluxHelmApplicationModule:
-    DependsOn:
-      - AckOrAcsClusterModule
+      SnatEntry: true
+      Addons:
+        Fn::If:
+          - FlannelPluginCondition
+          - - Name: flannel
+              Config: ''
+          - - Name: terway-eniip
+              Config: ''
+  ComputenestHelmApplication:
     Type: MODULE::ACS::ComputeNest::FluxOciHelmDeploy
-    Version: default
+    Version: v1
     Properties:
       ClusterId:
-        Fn::GetAtt:
-          - AckOrAcsClusterModule
-          - ClusterId
-      HelmChartUrl: '{{ computenest::helmchart::redis-operator }}'
+        Fn::If:
+          - CreateAck
+          - Fn::GetAtt:
+              - ManagedKubernetesCluster
+              - ClusterId
+          - Ref: ClusterId
+      HelmChartUrl: '{{computenest::helmchart::chartUrl}}'
+      DockerConfigJson: '{{computenest::helm::dockerconfigjson}}'
       ChartValues:
-        {}
+        namespace:           Ref:             Namespace
+        issuer:           name:             Ref:               Issuer
+          kind:             ClusterIssuer
+        redisOperator:           replicaCount:             Ref:               ReplicaCount
       Namespace:
-        Ref: 'ALIYUN::StackName'
+        Ref: ALIYUN::StackName
       ReleaseName: redis-operator
-Outputs:
-  Instruction:
-    Description:
-      zh-cn: 使用说明
-      en: Instruction
-    Value:
-      Fn::Sub:
-        - |
-          ${OutputData}
-        - OutputData:
-            Fn::GetAtt:
-              - FluxHelmApplicationModule
-              - HelmOutput
-  UpdateDesc:
-    Description:
-      zh-cn: 更新说明
-      en: UpdateDesc
-    Value:
-      Fn::Sub:
-        - |
-          You can update the deployed Helm Release locally using the following command:
-          helm upgrade ${ReleaseName} ${HelmRepo} --version ${HelmTag} -f values.yaml -n ${Namespace}
-        - ReleaseName: redis-operator
-          Namespace:
-            Ref: 'ALIYUN::StackName'
-          HelmRepo:
-            Fn::Join:
-              - ':'
-              - Fn::Select:
-                  - 0:-1
-                  - Fn::Split:
-                      - ':'
-                      - '{{ computenest::helmchart::redis-operator }}'
-          HelmTag:
-            Fn::Select:
-              - -1
-              - Fn::Split:
-                  - ':'
-                  - '{{ computenest::helmchart::redis-operator }}'
-Metadata:
+      WaitUntil:Outputs:Metadata:
   ALIYUN::ROS::Interface:
     ParameterGroups:
       - Parameters:
-          - CsOptions
+          - CreateAck
           - ClusterId
         Label:
-          en: Cs cluster option
-          zh-cn: 容器集群选项
+          en: Whether create ack
+          zh-cn: 是否新建ack集群
       - Parameters:
           - PayType
           - PayPeriodUnit
@@ -548,28 +486,31 @@ Metadata:
           zh-cn: 付费类型配置
       - Parameters:
           - WorkerInstanceType
-          - WorkerInstanceCount
           - WorkerSystemDiskCategory
           - WorkerSystemDiskSize
-          - LoginPassword
           - AckNetworkPlugin
           - PodCidr
+          - PodVswitchId
           - ServiceCidr
         Label:
           en: Kubernetes
           zh-cn: Kubernetes配置
       - Parameters:
-          - ChartValues
-        Label:
-          en: Helm Config
-          zh-cn: Helm配置
-      - Parameters:
           - ZoneId
-          - VpcOption
           - VpcId
           - VSwitchId
-          - VpcCidrBlock
-          - VSwitchCidrBlock
+          - LoginPassword
         Label:
           en: Basic Configuration
           zh-cn: 基础配置
+      
+      - Parameters:
+         - Namespace
+        
+         - ReplicaCount
+        
+         - IssuerName
+        Label:
+          en: Software Configuration
+          zh-cn: 软件配置
+      
