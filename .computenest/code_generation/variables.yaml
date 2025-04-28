@@ -1,7 +1,5 @@
 ReleaseName: redis-operator
 Helm:
-  HelmArtifactId: artifact-redis-operator
-  HelmArtifactVersion: 1.0.0
   Parameters:
     - Name: ReplicaCount
       Type: Number

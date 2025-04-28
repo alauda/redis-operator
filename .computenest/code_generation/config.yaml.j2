@@ -5,10 +5,10 @@ Service:
     SupplierDeployMetadata:
       HelmChartArtifactRelation:
         {% raw %}'{{computenest::helmchart::chartUrl}}': {% endraw %}
-          ArtifactId: {{ Helm.HelmArtifactId }}
-          ArtifactVersion: {{ Helm.HelmArtifactVersion }}
+          ArtifactId: ${Artifact.ArtifactRedisOperatorChart.ArtifactId}
+          ArtifactVersion: ${Artifact.ArtifactRedisOperatorChart.ArtifactVersion}
     TemplateConfigs:
-      - Name: ack
+      - Name: Deploy Redis Instance
         Url: 'ros_templates/template.yaml'
         AllowedRegions: []
   ServiceType: private
@@ -26,8 +26,11 @@ Artifact:
     ArtifactProperty:
       RepoName: ${HelmChartBuilder.HelmChart_1.RepoName}
       Tag: ${HelmChartBuilder.HelmChart_1.Tag}
+    ArtifactProperty:
+      RepoName: ${HelmChartBuilder.RedisOperatorChart.RepoName}
+      Tag: ${HelmChartBuilder.RedisOperatorChart.Tag}
 HelmChartBuilder:
-  HelmChart_1:
+  RedisOperatorChart:
     HelmChartPath: 'resources/artifact_resources/helm_chart/redis-operator-chart-3.18.0.tgz'
     RepoName: redis-operator-chart
     Tag: 3.18.0
