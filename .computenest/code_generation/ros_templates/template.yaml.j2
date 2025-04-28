@@ -295,7 +295,7 @@ Parameters:
             - ${CreateAck}
             - true
     Default: 172.16.0.0/16
-{%- for item in Parameters %}
+{%- for item in Helm.Parameters %}
   {{ item.Name }}:
     Type: {{ item.Type }}
 {%- if item.AssociationProperty %}
@@ -326,6 +326,39 @@ Parameters:
       {%- endfor %}
     {%- endif %}
 {% endfor %}
+
+{%- for item in Instance.Parameters %}
+  {{ item.Name }}:
+    Type: {{ item.Type }}
+{%- if item.AssociationProperty %}
+    AssociationProperty: {{item.AssociationProperty}}
+{% endif -%}
+  {%- if item.Label %}
+    Label: {{item.Label}}
+{% endif -%}
+  {%- if item.NoEcho %}
+    NoEcho: {{item.NoEcho}}
+{% endif -%}
+{%- if item.AssocaitionPropertyMetadata %}
+    AssociationPropertyMetadata: {{item.AssociationPropertyMetadata}}
+{% endif -%}
+{%- if item.Default %}
+    Default: {{item.Default}}
+{% endif -%}
+{%- if item.MinValue %}
+    MinValue: {{item.MinValue}}
+{% endif -%}
+{%- if item.MaxValue %}
+    MaxValue: {{item.MaxValue}}
+{% endif -%}
+    {%- if item.AllowedValues %}
+    AllowedValues:
+      {%- for value in item.AllowedValues %}
+      - {{ value }}
+      {%- endfor %}
+    {%- endif %}
+{% endfor %}
+
 Conditions:
   CreateAck:
     Fn::Equals:
@@ -471,19 +504,87 @@ Resources:
       DockerConfigJson: '{{computenest::helm::dockerconfigjson}}'
       {%- endraw %}
       ChartValues:
-        {{ Values | indent(width=8) }}
-      Namespace:
-        Ref: ALIYUN::StackName
+        {{ Helm.Values | indent(width=8) }}
+      Namespace: redis-system
       ReleaseName: {{ ReleaseName }}
       WaitUntil:
-{%- for item in Outputs %}
+       {%- for item in Helm.Outputs %}
         - Kind: {{ item.Kind }}
           Name: {{ item.Name }}
           JsonPath: {{ item.JsonPath }}
           Operator: NotEmpty
           FirstMatch: true
           Timeout: 300
-{% endfor -%}
+       {%- endfor %}
+  ClusterApplication:
+    Type: ALIYUN::CS::ClusterApplication
+    Properties:
+      ClusterId:
+        Fn::If:
+          - CreateAck
+          - Fn::GetAtt:
+              - ManagedKubernetesCluster
+              - ClusterId
+          - Ref: ClusterId
+      DefaultNamespace: default
+      YamlContent:
+        Fn::Sub:
+          - |
+            apiVersion: middleware.alauda.io/v1
+            kind: Redis
+            metadata:
+              name: ${InstanceName}
+            spec:
+              affinityPolicy: SoftAntiAffinity
+              arch: ${Version}
+              customConfig: ${RedisCustomConfigs}
+              expose:
+                type: ${RedisServiceType}
+              replicas:
+                cluster:
+                  shard: ${RedisClusterShards}
+                  slave: ${RedisReplicasOfShard}
+                sentinel:
+                  replicas: ${RedisReplicasOfShard}
+              resources:
+                limits:
+                  cpu: ${RedisContainerCpu}
+                  memory: ${RedisContainerMemory}
+                requests:
+                  cpu: ${RedisContainerCpu}
+                  memory: ${RedisContainerMemory}
+              version: ${RedisVersion}
+          - InstanceName:
+              Ref: InstanceName
+          - RedisVersion:
+              Ref: RedisVersion
+          - RedisArch:
+              Ref: RedisArch
+          - RedisClusterShards:
+              Ref: RedisClusterShards
+          - RedisReplicasOfShard:
+              Ref: RedisReplicasOfShard
+          - RedisContainerCpu:
+              Ref: RedisContainerCpu
+          - RedisContainerMemory:
+              Ref: RedisContainerMemory
+          - RedisCustomConfigs:
+              Ref: RedisCustomConfigs
+          - RedisServiceType:
+              Ref: RedisServiceType
+          - RedisStorageClass:
+              Ref: RedisStorageClass
+          - RedisStorageSize:
+              Ref: RedisStorageSize
+      WaitUntil:
+       {%- for item in Helm.Outputs %}
+        - Kind: {{ item.Kind }}
+          Name: {{ item.Name }}
+          JsonPath: {{ item.JsonPath }}
+          Operator: NotEmpty
+          FirstMatch: true
+          Timeout: 300
+       {%- endfor %}
 Outputs:
 {%- for item in Outputs %}
   {{ item.DisplayName }}:
@@ -532,12 +633,23 @@ Metadata:
         Label:
           en: Basic Configuration
           zh-cn: 基础配置
-      {% if Parameters | length > 0 %}
+
+      {%- if Helm.Parameters | length > 0 %}
       - Parameters:
-        {%- for parameter in Parameters %}
+        {%- for parameter in Helm.Parameters %}
          - {{ parameter.Name }}
-        {% endfor -%}
+        {%- endfor %}
         Label:
-          en: Software Configuration
-          zh-cn: 软件配置
-      {% endif %}
+          en: Operator Configuration
+          zh-cn: Operator 配置
+      {%- endif %}
+
+      {%- if Instance.Parameters | length > 0 %}
+      - Parameters:
+        {%- for parameter in Instance.Parameters %}
+         - {{ parameter.Name }}
+        {%- endfor %}
+        Label:
+          en: Instance Configuration
+          zh-cn: 实例配置
+      {%- endif %}

@@ -1,40 +1,171 @@
 ReleaseName: redis-operator
-HelmArtifactId: artifact-redis-operator
-HelmArtifactVersion: draft
-Parameters:
-  - Name: Namespace
-    Type: String
-    Label:
-      en: Deployment Namespace
-      zh-cn: 部署的命名空间
-    Description:
-      en: The namespace where the Redis Operator will be deployed.
-      zh-cn: 部署 Redis Operator 的命名空间。
-    Default: redis-system
-    AllowedPattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
-    Required: true
-  - Name: ReplicaCount
-    Type: Number
-    Label:
-      en: Redis Operator Replica Count
-      zh-cn: Redis Operator 副本数
-    Required: true
-    Default: 1
-    MaxValue: 3
-    MinValue: 1
-  - Name: IssuerName
-    Type: String
-    Label:
-      en: Webhook TLS Certificate Cluster Issuer Name
-      zh-cn: Webhook TLS 集群证书颁发者
-    Required: true
-Values:
-  namespace:
-    Ref: Namespace
-  issuer:
-    name:
-      Ref: Issuer
-    kind: ClusterIssuer
-  redisOperator:
-    replicaCount:
-      Ref: ReplicaCount
+Helm:
+  HelmArtifactId: artifact-redis-operator
+  HelmArtifactVersion: 1.0.0
+  Parameters:
+    - Name: ReplicaCount
+      Type: Number
+      Label:
+        en: Redis Operator Replica Count
+        zh-cn: Redis Operator 副本数
+      Required: true
+      Default: 1
+      MaxValue: 3
+      MinValue: 1
+    - Name: IssuerName
+      Type: String
+      Label:
+        en: Webhook TLS Certificate Cluster Issuer Name
+        zh-cn: Webhook TLS 集群证书颁发者
+      Required: true
+  Values:
+    issuer:
+      name:
+        Ref: Issuer
+      kind: ClusterIssuer
+    redisOperator:
+      replicaCount:
+        Ref: ReplicaCount
+Instance:
+  Parameters:
+    - Name: InstanceName
+      Type: String
+      Label:
+        en: Redis Instance Name
+        zh-cn: Redis 实例名称
+      AllowedPattern: ^([a-z0-9][a-z0-9\-]*)?[a-z0-9]+$
+      MinLength: 1
+      MaxLength: 30
+      Required: true
+    - Name: RedisArch
+      Type: String
+      Label:
+        en: Redis Architecture
+        zh-cn: Redis 架构
+      AllowedValues:
+        - sentinel
+        - cluster
+      Default: sentinel
+      Required: true
+    - Name: RedisVersion
+      Type: String
+      Label:
+        en: Redis Version
+        zh-cn: Redis 版本
+      AllowedValues:
+        - "6.0"
+        - "7.2"
+      Default: "7.2"
+      Required: true
+    - Name: RedisClusterShards
+      Type: Number
+      Label:
+        en: Redis Cluster Shards
+        zh-cn: Redis 集群分片数
+      Required: true
+      Default: 3
+      MaxValue: 25
+      MinValue: 3
+    - Name: RedisReplicasOfShard
+      Type: Number
+      Label:
+        en: Replicas of each Redis Replication
+        zh-cn: 每个 Redis 副本的副本数
+      Required: true
+      Default: 1
+      MaxValue: 5
+      MinValue: 0
+  
+    - Name: RedisContainerCpu
+      Type: Number
+      Label:
+        en: vCPU
+        zh-cn: vCPU
+      Required: true
+      Default: 1
+      MaxValue: 16
+      MinValue: 0
+    - Name: RedisContainerMemory
+      Type: Number
+      Label:
+        en: Memory
+        zh-cn: 内存
+      Required: true
+      Default: 2
+      MaxValue: 64
+      MinValue: 2
+    - Name: RedisCustomConfigs
+      Type: Json
+      Label:
+        en: Redis Configuration
+        zh-cn: Redis 配置
+      Default: |
+        {
+          "save": "900 1 300 10 60 10000"
+        }
+    - Name: RedisDefaultPassword
+      Type: String
+      Label:
+        en: Redis Default Password
+        zh-cn: Redis 默认密码
+      Description:
+        en: The default password for Redis. This is used for default user authentication.
+        zh-cn: Redis 的默认用户密码。用于身份验证。
+      AssociationProperty: ALIYUN::ECS::Instance::Password
+      AllowedPattern: ^[a-zA-Z0-9\~\!\@\#\$\%\^\&\*\(\)\-\_\=\+\?]*$
+      MinLength: 8
+      MaxLength: 32
+      Default: null
+      Confirm: true
+      NoEcho: true
+  
+    - Name: RedisServiceType
+      Type: String
+      Label:
+        en: Service Type
+        zh-cn: 服务类型
+      Description:
+        en: The type of service to create for Redis. This can be ClusterIP, NodePort, or LoadBalancer.
+        zh-cn: 创建 Redis 的服务类型。可以是 ClusterIP、NodePort 或 LoadBalancer。
+      Default: ClusterIP
+      AllowedValues:
+        - ClusterIP
+        - NodePort
+        - LoadBalancer
+    - Name: RedisStorageClass
+      Type: String
+      Label:
+        en: Storage Class
+        zh-cn: 存储类
+      Default: null
+    - Name: RedisStorageSize
+      Type: Number
+      Label:
+        en: Storage Size (GB)
+        zh-cn: 存储大小 (GB)
+      Default: 10
+  Values:
+    instanceName:
+      Ref: InstanceName
+    redisArch:
+      Ref: RedisArch
+    redisVersion:
+      Ref: RedisVersion
+    redisClusterShards:
+      Ref: RedisClusterShards
+    redisReplicasOfShard:
+      Ref: RedisReplicasOfShard
+    redisContainerCpu:
+      Ref: RedisContainerCpu
+    redisContainerMemory:
+      Ref: RedisContainerMemory
+    redisCustomConfigs:
+      Ref: RedisCustomConfigs
+    redisDefaultPassword:
+      Ref: RedisDefaultPassword
+    redisServiceType:
+      Ref: RedisServiceType
+    redisStorageClass:
+      Ref: RedisStorageClass
+    redisStorageSize:
+      Ref: RedisStorageSize
