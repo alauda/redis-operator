@@ -1,4 +1,6 @@
 ReleaseName: redis-operator
+HelmArtifactId: artifact-chideat-redis-operator-chart
+HelmArtifactVersion: draft
 Helm:
   Parameters:
     - Name: ReplicaCount
@@ -18,9 +20,9 @@ Helm:
       Required: true
   Values:
     issuer:
+      kind: ClusterIssuer
       name:
         Ref: Issuer
-      kind: ClusterIssuer
     redisOperator:
       replicaCount:
         Ref: ReplicaCount

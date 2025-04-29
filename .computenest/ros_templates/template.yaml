@@ -562,9 +562,14 @@ Resources:
       HelmChartUrl: '{{computenest::helmchart::chartUrl}}'
       DockerConfigJson: '{{computenest::helm::dockerconfigjson}}'
       ChartValues:
-        issuer:           name:             Ref:               Issuer
-          kind:             ClusterIssuer
-        redisOperator:           replicaCount:             Ref:               ReplicaCount
+        
+        issuer: 
+          kind: ClusterIssuer
+          name: 
+            Ref: Issuer
+        redisOperator: 
+          replicaCount: 
+            Ref: ReplicaCount
       Namespace: redis-system
       ReleaseName: redis-operator
       WaitUntil:
