@@ -504,7 +504,13 @@ Resources:
       DockerConfigJson: '{{computenest::helm::dockerconfigjson}}'
       {%- endraw %}
       ChartValues:
-        {{ Helm.Values | indent(width=8) }}
+        issuer: 
+          kind: ClusterIssuer
+          name: 
+            Ref: Issuer
+        redisOperator: 
+          replicaCount: 
+            Ref: ReplicaCount
       Namespace: redis-system
       ReleaseName: {{ ReleaseName }}
       WaitUntil:

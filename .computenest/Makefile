@@ -1,7 +1,7 @@
 all: install gen
 
 install:
-	pip install computenest-cli==1.2.9
+	pip install computenest-cli
 
 gen:
 	computenest-cli generate --file_path=code_generation/config.yaml.j2 --parameter_path=code_generation/variables.yaml --output_path=config.yaml

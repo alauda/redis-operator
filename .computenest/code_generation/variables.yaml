@@ -18,14 +18,6 @@ Helm:
         en: Webhook TLS Certificate Cluster Issuer Name
         zh-cn: Webhook TLS 集群证书颁发者
       Required: true
-  Values:
-    issuer:
-      kind: ClusterIssuer
-      name:
-        Ref: Issuer
-    redisOperator:
-      replicaCount:
-        Ref: ReplicaCount
 Instance:
   Parameters:
     - Name: InstanceName

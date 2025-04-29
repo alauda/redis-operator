@@ -562,7 +562,6 @@ Resources:
       HelmChartUrl: '{{computenest::helmchart::chartUrl}}'
       DockerConfigJson: '{{computenest::helm::dockerconfigjson}}'
       ChartValues:
-        
         issuer: 
           kind: ClusterIssuer
           name: 
