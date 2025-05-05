@@ -1,7 +1,7 @@
 ROSTemplateFormatVersion: '2015-09-01'
 Description:
-  en: 新建ack部署helm
-  zh-cn: new ack deploy helm
+  en: Deploy Redis Cluster
+  zh-cn: 安装部署 Redis 集群
 Parameters:
   CreateAck:
     Type: Boolean
@@ -298,126 +298,97 @@ Parameters:
   ReplicaCount:
     Type: Number
     Label: {'en': 'Redis Operator Replica Count', 'zh-cn': 'Redis Operator 副本数'}
-
     Default: 1
-
     MinValue: 1
-
     MaxValue: 3
-
-
   IssuerName:
     Type: String
     Label: {'en': 'Webhook TLS Certificate Cluster Issuer Name', 'zh-cn': 'Webhook TLS 集群证书颁发者'}
-
-
   InstanceName:
     Type: String
     Label: {'en': 'Redis Instance Name', 'zh-cn': 'Redis 实例名称'}
-
-
   RedisArch:
     Type: String
     Label: {'en': 'Redis Architecture', 'zh-cn': 'Redis 架构'}
-
     Default: sentinel
-
     AllowedValues:
       - sentinel
       - cluster
-
   RedisVersion:
     Type: String
     Label: {'en': 'Redis Version', 'zh-cn': 'Redis 版本'}
-
-    Default: 7.2
-
+    Default: "7.2"
     AllowedValues:
-      - 6.0
-      - 7.2
-
+      - "6.0"
+      - "7.2"
   RedisClusterShards:
     Type: Number
     Label: {'en': 'Redis Cluster Shards', 'zh-cn': 'Redis 集群分片数'}
-
     Default: 3
-
     MinValue: 3
-
     MaxValue: 25
-
-
   RedisReplicasOfShard:
     Type: Number
     Label: {'en': 'Replicas of each Redis Replication', 'zh-cn': '每个 Redis 副本的副本数'}
-
     Default: 1
-
     MaxValue: 5
-
-
   RedisContainerCpu:
     Type: Number
     Label: {'en': 'vCPU', 'zh-cn': 'vCPU'}
-
+    Description:
+      en: 'vCPU of Redis container'
+      zh-cn: 'Redis 容器 vCPU'
     Default: 1
-
     MaxValue: 16
-
-
   RedisContainerMemory:
     Type: Number
-    Label: {'en': 'Memory', 'zh-cn': '内存'}
-
+    Label: {'en': 'Memory', 'zh-cn': '内存 (Gi)'}
+    Description:
+      en: 'Memory (Gi) of Redis container'
+      zh-cn: 'Redis 容器内存 (Gi)'
     Default: 2
-
     MinValue: 2
-
     MaxValue: 64
-
-
   RedisCustomConfigs:
     Type: Json
     Label: {'en': 'Redis Configuration', 'zh-cn': 'Redis 配置'}
-
-    Default: {
-  "save": "900 1 300 10 60 10000"
-}
-
-
-
+    Description:
+      en: 'Redis configuration, reference to https://redis.io/docs/latest/operate/oss_and_stack/management/config/ for details'
+      zh-cn: 'Redis 配置，详情参考 https://redis.io/docs/latest/operate/oss_and_stack/management/config/'
+    Default: { "save": "900 1 300 10 60 10000" }
   RedisDefaultPassword:
     Type: String
-    AssociationProperty: ALIYUN::ECS::Instance::Password
-
-    Label: {'en': 'Redis Default Password', 'zh-cn': 'Redis 默认密码'}
-
+    Label: {'en': 'Redis Default User Password', 'zh-cn': 'Redis 默认用户密码'}
+    ConstraintDescription:
+      en: Length 8-32, must contain three(letters, numbers, ~!@#$%^&*()-_=+? Special symbol in)
+      zh-cn: 长度8-32，必须包含（字母、数字、 ~!@#$%^&*()-_=+? 中的特殊符号）
+    AllowedPattern: ^[a-zA-Z0-9\~\!\@\#\$\%\^\&\*\(\)\-\_\=\+\?]*$
+    MinLength: 8
+    MaxLength: 32
     NoEcho: True
-
-
   RedisServiceType:
     Type: String
     Label: {'en': 'Service Type', 'zh-cn': '服务类型'}
-
+    Description:
+      en: 'Redis service type'
+      zh-cn: 'Redis 服务类型'
     Default: ClusterIP
-
     AllowedValues:
       - ClusterIP
       - NodePort
-      - LoadBalancer
-
   RedisStorageClass:
     Type: String
     Label: {'en': 'Storage Class', 'zh-cn': '存储类'}
-
-
+    Description:
+      en: 'Use dynamic provisioning to create a persistent volume with the specified storage class. The storage class must be created in advance.'
+      zh-cn: '使用动态配置创建具有指定存储类的持久卷。存储类必须提前创建。'
   RedisStorageSize:
     Type: Number
     Label: {'en': 'Storage Size (GB)', 'zh-cn': '存储大小 (GB)'}
-
+    Description:
+      en: 'PVC size for each Redis pod.'
+      zh-cn: '每个 Redis pod 的 PVC 大小。'
     Default: 10
-
-
 
 Conditions:
   CreateAck:
@@ -432,6 +403,7 @@ Conditions:
     Fn::Equals:
       - Ref: AckNetworkPlugin
       - Terway
+
 Resources:
   VpcsDataSource:
     Type: DATASOURCE::VPC::Vpcs
@@ -565,15 +537,25 @@ Resources:
         issuer: 
           kind: ClusterIssuer
           name: 
-            Ref: Issuer
+            Ref: IssuerName
         redisOperator: 
           replicaCount: 
             Ref: ReplicaCount
       Namespace: redis-system
       ReleaseName: redis-operator
       WaitUntil:
+        - ApiVersion: apps/v1
+          Kind: Deployment
+          Name: redis-operator
+          Namespace: redis-system
+          JsonPath: $.status.conditions[0].status
+          FirstMatch: true
+          Operator: Equal
+          Value: "True"
   ClusterApplication:
     Type: ALIYUN::CS::ClusterApplication
+    DependsOn:
+      - ComputenestHelmApplication
     Properties:
       ClusterId:
         Fn::If:
@@ -592,7 +574,7 @@ Resources:
               name: ${InstanceName}
             spec:
               affinityPolicy: SoftAntiAffinity
-              arch: ${Version}
+              arch: ${RedisVersion}
               customConfig: ${RedisCustomConfigs}
               expose:
                 type: ${RedisServiceType}
@@ -612,28 +594,73 @@ Resources:
               version: ${RedisVersion}
           - InstanceName:
               Ref: InstanceName
-          - RedisVersion:
+            RedisVersion:
               Ref: RedisVersion
-          - RedisArch:
+            RedisArch:
               Ref: RedisArch
-          - RedisClusterShards:
+            RedisClusterShards:
               Ref: RedisClusterShards
-          - RedisReplicasOfShard:
+            RedisReplicasOfShard:
               Ref: RedisReplicasOfShard
-          - RedisContainerCpu:
+            RedisContainerCpu:
               Ref: RedisContainerCpu
-          - RedisContainerMemory:
+            RedisContainerMemory:
               Ref: RedisContainerMemory
-          - RedisCustomConfigs:
+            RedisCustomConfigs:
               Ref: RedisCustomConfigs
-          - RedisServiceType:
+            RedisServiceType:
               Ref: RedisServiceType
-          - RedisStorageClass:
+            RedisStorageClass:
               Ref: RedisStorageClass
-          - RedisStorageSize:
+            RedisStorageSize:
               Ref: RedisStorageSize
       WaitUntil:
-Outputs:Metadata:
+        - ApiVersion: middleware.alauda.io/v1
+          Kind: Redis
+          Name:
+            Ref: InstanceName
+          Namespace: default
+          JsonPath: $.status.phase
+          Operator: Equal
+          Value: Ready
+          FirstMatch: true
+  # 获取service信息，输出到output中
+  # ClusterApplicationResources:
+  #   Type: DATASOURCE::CS::ClusterApplicationResources
+  #   DependsOn:
+  #     - ComputenestHelmApplication
+  #     - ClusterApplication
+  #   Properties:
+  #     ClusterId:
+  #       Fn::GetAtt:
+  #         - ManagedKubernetesCluster
+  #         - ClusterId
+  #     Kind: Service
+  #     Name: spring-boot-chart
+  #     Namespace:
+  #       Ref: ALIYUN::StackName
+  #     JsonPath: $.status.loadBalancer.ingress[0].ip
+  #     FirstMatch: true
+Outputs:
+  Endpoint:
+    Description:
+      zh-cn: 访问地址
+      en: Access Address
+    Value:
+      Fn::Select:
+        - !Ref RedisArch
+        - sentinel:
+            Fn::Sub:
+              - "rfs-${InstanceName}.${Namespace}:26379"
+              - InstanceName: !Ref InstanceName
+                Namespace: !Ref ALIYUN::StackName
+          cluster:
+            Fn::Sub:
+              - "drc-${InstanceName}.${Namespace}:6279"
+              - InstanceName: !Ref InstanceName
+                Namespace: !Ref ALIYUN::StackName
+
+Metadata:
   ALIYUN::ROS::Interface:
     ParameterGroups:
       - Parameters:
