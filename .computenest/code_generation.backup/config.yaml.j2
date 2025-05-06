@@ -4,16 +4,17 @@ Service:
   DeployMetadata:
     SupplierDeployMetadata:
       HelmChartArtifactRelation:
-        '{{computenest::helmchart::chartUrl}}': 
+        {% raw %}'{{computenest::helmchart::chartUrl}}': {% endraw %}
           ArtifactId: ${Artifact.Chart.ArtifactId}
           ArtifactVersion: ${Artifact.Chart.ArtifactVersion}
     AcrImageArtifactRelation:
-        '{{ computenest::acrimage::redis6 }}': 
+        {% raw %}'{{ computenest::acrimage::redis6 }}': {% endraw %}
           ArtifactId: ${Artifact.Redis6.ArtifactId}
           ArtifactVersion: ${Artifact.Redis6.ArtifactVersion}
-        '{{ computenest::acrimage::redis72 }}': 
+        {% raw %}'{{ computenest::acrimage::redis72 }}': {% endraw %}
           ArtifactId: ${Artifact.Redis72.ArtifactId}
           ArtifactVersion: ${Artifact.Redis72.ArtifactVersion}
+
     TemplateConfigs:
       - Name: Deploy Redis Instance
         Url: 'ros_templates/template.yaml'
