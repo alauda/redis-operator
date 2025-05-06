@@ -1,0 +1,20 @@
+SlbServiceName: test
+ChartValues:
+  redisOperator:
+    replicaCount: ${ReplicaCount}
+  issuer:
+    kind: ClusterIssuer
+    name: ${IssuerName}
+HelmChartPath: charts/redis-operator
+ServicePorts:
+- 80
+ServiceType: private
+ArtifactSourceType: HelmChart
+ServiceBuildRegion: ap-southeast-1
+RepoName: alauda/redis-operator
+RegionId: ap-southeast-1
+CustomParameters: ''
+OutputType: ServiceLoadBalancer
+Owner: chideat
+Branch: aliyun-computenest
+Platform: github
