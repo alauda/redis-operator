@@ -1,4 +1,4 @@
-SlbServiceName: test
+SlbServiceName: testlb
 ChartValues:
   redisOperator:
     replicaCount: ${ReplicaCount}
@@ -13,7 +13,46 @@ ArtifactSourceType: HelmChart
 ServiceBuildRegion: ap-southeast-1
 RepoName: alauda/redis-operator
 RegionId: ap-southeast-1
-CustomParameters: ''
+CustomParameters:
+- NoEcho: false
+  Type: String
+  AllowedValues:
+  - cluster
+  - sentinel
+  - standalone
+  AllowedPattern: ''
+  Label: RedisArch
+  ConstraintDescription: ''
+  Default: cluster
+  Name: RedisArch
+- NoEcho: false
+  Type: String
+  AllowedValues:
+  - '6.0'
+  - '7.2'
+  AllowedPattern: ''
+  Label: RedisVersion
+  ConstraintDescription: ''
+  Default: '7.2'
+  Name: RedisVersion
+- NoEcho: false
+  Type: Number
+  AllowedPattern: ''
+  Label: RedisClusterShards
+  MinValue: 3
+  ConstraintDescription: ''
+  MaxValue: 120
+  Default: '3'
+  Name: RedisClusterShards
+- NoEcho: false
+  Type: Number
+  AllowedPattern: ''
+  Label: RedisReplicasOfShard
+  MinValue: 0
+  ConstraintDescription: ''
+  MaxValue: 5
+  Default: '1'
+  Name: RedisReplicasOfShard
 OutputType: ServiceLoadBalancer
 Owner: chideat
 Branch: aliyun-computenest
