@@ -403,11 +403,15 @@ Parameters:
     Label:
       en: Webhook TLS Certificate Cluster Issuer Name
       zh-cn: Webhook TLS 集群证书颁发者
-  InstanceName:
+    Required: false
+  InstallNamespace:
     Type: String
     Label:
-      en: Redis Instance Name
-      zh-cn: Redis 实例名称
+      en: Redis Operator Namespace
+      zh-cn: Redis Operator 命名空间
+    Default: default
+    AllowedPattern: ^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$
+    Required: true
   RedisArch:
     Type: String
     Label:
@@ -417,6 +421,7 @@ Parameters:
     AllowedValues:
       - sentinel
       - cluster
+    Required: true
   RedisVersion:
     Type: String
     Label:
@@ -426,6 +431,7 @@ Parameters:
     AllowedValues:
       - '6.0'
       - '7.2'
+    Required: true
   RedisClusterShards:
     Type: Number
     Label:
@@ -631,7 +637,8 @@ Resources:
         Fn::GetAtt:
           - AckOrAcsClusterModule
           - ClusterId
-      DefaultNamespace: default
+      DefaultNamespace:
+        Ref: InstallNamespace
       YamlContent:
         Fn::Sub:
           - |
@@ -660,7 +667,7 @@ Resources:
                   memory: ${RedisContainerMemory}
               version: ${RedisVersion}
           - InstanceName:
-              Ref: InstanceName
+              Ref: ALIYUN::StackName
             RedisVersion:
               Ref: RedisVersion
             RedisArch:
@@ -685,7 +692,7 @@ Resources:
         - ApiVersion: middleware.alauda.io/v1
           Kind: Redis
           Name:
-            Ref: InstanceName
+            Ref: ALIYUN::StackName
           Namespace: default
           JsonPath: $.status.phase
           Operator: Equals
@@ -706,16 +713,15 @@ Outputs:
             Fn::Sub:
               - rfs-${InstanceName}.${Namespace}:26379
               - InstanceName:
-                  Ref: InstanceName
-                Namespace:
                   Ref: ALIYUN::StackName
+                Namespace:
+                  Ref: InstallNamespace
           cluster:
             Fn::Sub:
               - drc-${InstanceName}.${Namespace}:6279
               - InstanceName:
-                  Ref: InstanceName
-                Namespace:
                   Ref: ALIYUN::StackName
+                Namespace: InstallNamespace
   Instruction:
     Description:
       zh-cn: 使用说明
@@ -804,7 +810,7 @@ Metadata:
           en: Operator Configuration
           zh-cn: Operator 配置
       - Parameters:
-          - InstanceName
+          - InstallNamespace
           - RedisArch
           - RedisVersion
           - RedisClusterShards
@@ -819,4 +825,3 @@ Metadata:
         Label:
           en: Instance Configuration
           zh-cn: 实例配置
-
