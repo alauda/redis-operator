@@ -32,13 +32,13 @@ Parameters:
       zh-cn: 部署应用程序的K8s集群ID
     AllowedPattern: '[0-9a-z]+$'
     Required: true
-    Default: null
+    Default: Null
     Label:
       en: Kubernetes ClusterId
       zh-cn: K8s集群ID
-    AssociationProperty: 'ALIYUN::CS::Cluster::ClusterId'
+    AssociationProperty: ALIYUN::CS::Cluster::ClusterId
     AssociationPropertyMetadata:
-      RegionId: '${RegionId}'
+      RegionId: ${RegionId}
       Visible:
         Condition:
           Fn::Equals:
@@ -120,7 +120,7 @@ Parameters:
       en: Zone ID
       zh-cn: 可用区
     Required: true
-    Default: null
+    Default: Null
     AssociationPropertyMetadata:
       Visible:
         Condition:
@@ -158,15 +158,13 @@ Parameters:
       en: VPC ID
       zh-cn: 专有网络VPC实例ID
     Description:
-      en: >-
-        Please search the ID starting with (vpc-xxx) from console-Virtual
-        Private Cloud
+      en: Please search the ID starting with (vpc-xxx) from console-Virtual Private Cloud
       zh-cn: 现有虚拟专有网络的实例ID
     Required: true
-    Default: null
-    AssociationProperty: 'ALIYUN::ECS::VPC::VPCId'
+    Default: Null
+    AssociationProperty: ALIYUN::ECS::VPC::VPCId
     AssociationPropertyMetadata:
-      RegionId: '${RegionId}'
+      RegionId: ${RegionId}
       Visible:
         Condition:
           Fn::And:
@@ -175,24 +173,22 @@ Parameters:
                   - ${CsOptions}
                   - ExistCs
             - Fn::Equals:
-                  - ExistingVPC
-                  - ${VpcOption}
+                - ExistingVPC
+                - ${VpcOption}
   VSwitchId:
     Type: String
     Label:
       en: VSwitch ID
       zh-cn: 交换机实例ID
     Description:
-      en: >-
-        Instance ID of existing business network switches, console-Virtual
-        Private Cloud-VSwitches under query
+      en: Instance ID of existing business network switches, console-Virtual Private Cloud-VSwitches under query
       zh-cn: 现有业务网络交换机的实例ID
     Required: true
-    Default: null
-    AssociationProperty: 'ALIYUN::ECS::VSwitch::VSwitchId'
+    Default: Null
+    AssociationProperty: ALIYUN::ECS::VSwitch::VSwitchId
     AssociationPropertyMetadata:
-      VpcId: '${VpcId}'
-      ZoneId: '${ZoneId}'
+      VpcId: ${VpcId}
+      ZoneId: ${ZoneId}
       Visible:
         Condition:
           Fn::And:
@@ -201,8 +197,8 @@ Parameters:
                   - ${CsOptions}
                   - ExistCs
             - Fn::Equals:
-                  - ExistingVPC
-                  - ${VpcOption}
+                - ExistingVPC
+                - ${VpcOption}
   VpcCidrBlock:
     Type: String
     Label:
@@ -276,7 +272,7 @@ Parameters:
     Label:
       en: Worker Nodes Types
       zh-cn: Worker节点规格
-    Default: null
+    Default: Null
     Required: true
     AssociationProperty: ALIYUN::ECS::Instance::InstanceType
     AssociationPropertyMetadata:
@@ -304,7 +300,7 @@ Parameters:
             - NewAck
   WorkerSystemDiskCategory:
     Type: String
-    Default: null
+    Default: Null
     Required: true
     AssociationProperty: ALIYUN::ECS::Disk::SystemDiskCategory
     AssociationPropertyMetadata:
@@ -343,7 +339,7 @@ Parameters:
     AssociationPropertyMetadata:
       ValueLabelMapping:
         flannel: flannel
-        terway-eniip : terway
+        terway-eniip: terway
       Visible:
         Condition:
           Fn::Equals:
@@ -394,103 +390,129 @@ Parameters:
               - ${CsOptions}
               - ExistCs
     Default: 172.16.0.0/16
-
   ReplicaCount:
     Type: Number
-    Label: {'en': 'Redis Operator Replica Count', 'zh-cn': 'Redis Operator 副本数'}
+    Label:
+      en: Redis Operator Replica Count
+      zh-cn: Redis Operator 副本数
     Default: 1
     MinValue: 1
     MaxValue: 3
   IssuerName:
     Type: String
-    Label: {'en': 'Webhook TLS Certificate Cluster Issuer Name', 'zh-cn': 'Webhook TLS 集群证书颁发者'}
+    Label:
+      en: Webhook TLS Certificate Cluster Issuer Name
+      zh-cn: Webhook TLS 集群证书颁发者
   InstanceName:
     Type: String
-    Label: {'en': 'Redis Instance Name', 'zh-cn': 'Redis 实例名称'}
+    Label:
+      en: Redis Instance Name
+      zh-cn: Redis 实例名称
   RedisArch:
     Type: String
-    Label: {'en': 'Redis Architecture', 'zh-cn': 'Redis 架构'}
+    Label:
+      en: Redis Architecture
+      zh-cn: Redis 架构
     Default: sentinel
     AllowedValues:
       - sentinel
       - cluster
   RedisVersion:
     Type: String
-    Label: {'en': 'Redis Version', 'zh-cn': 'Redis 版本'}
-    Default: "7.2"
+    Label:
+      en: Redis Version
+      zh-cn: Redis 版本
+    Default: '7.2'
     AllowedValues:
-      - "6.0"
-      - "7.2"
+      - '6.0'
+      - '7.2'
   RedisClusterShards:
     Type: Number
-    Label: {'en': 'Redis Cluster Shards', 'zh-cn': 'Redis 集群分片数'}
+    Label:
+      en: Redis Cluster Shards
+      zh-cn: Redis 集群分片数
     Default: 3
     MinValue: 3
     MaxValue: 25
   RedisReplicasOfShard:
     Type: Number
-    Label: {'en': 'Replicas of each Redis Replication', 'zh-cn': '每个 Redis 副本的副本数'}
+    Label:
+      en: Replicas of each Redis Replication
+      zh-cn: 每个 Redis 副本的副本数
     Default: 1
     MaxValue: 5
   RedisContainerCpu:
     Type: Number
-    Label: {'en': 'vCPU', 'zh-cn': 'vCPU'}
+    Label:
+      en: vCPU
+      zh-cn: vCPU
     Description:
-      en: 'vCPU of Redis container'
-      zh-cn: 'Redis 容器 vCPU'
+      en: vCPU of Redis container
+      zh-cn: Redis 容器 vCPU
     Default: 1
     MaxValue: 16
   RedisContainerMemory:
     Type: Number
-    Label: {'en': 'Memory', 'zh-cn': '内存 (Gi)'}
+    Label:
+      en: Memory
+      zh-cn: 内存 (Gi)
     Description:
-      en: 'Memory (Gi) of Redis container'
-      zh-cn: 'Redis 容器内存 (Gi)'
+      en: Memory (Gi) of Redis container
+      zh-cn: Redis 容器内存 (Gi)
     Default: 2
     MinValue: 2
     MaxValue: 64
   RedisCustomConfigs:
     Type: Json
-    Label: {'en': 'Redis Configuration', 'zh-cn': 'Redis 配置'}
+    Label:
+      en: Redis Configuration
+      zh-cn: Redis 配置
     Description:
-      en: 'Redis configuration, reference to https://redis.io/docs/latest/operate/oss_and_stack/management/config/ for details'
-      zh-cn: 'Redis 配置，详情参考 https://redis.io/docs/latest/operate/oss_and_stack/management/config/'
-    Default: { "save": "900 1 300 10 60 10000" }
+      en: Redis configuration, reference to https://redis.io/docs/latest/operate/oss_and_stack/management/config/ for details
+      zh-cn: Redis 配置，详情参考 https://redis.io/docs/latest/operate/oss_and_stack/management/config/
+    Default:
+      save: 900 1 300 10 60 10000
   RedisDefaultPassword:
     Type: String
-    Label: {'en': 'Redis Default User Password', 'zh-cn': 'Redis 默认用户密码'}
+    Label:
+      en: Redis Default User Password
+      zh-cn: Redis 默认用户密码
     ConstraintDescription:
       en: Length 8-32, must contain three(letters, numbers, ~!@#$%^&*()-_=+? Special symbol in)
       zh-cn: 长度8-32，必须包含（字母、数字、 ~!@#$%^&*()-_=+? 中的特殊符号）
     AllowedPattern: ^[a-zA-Z0-9\~\!\@\#\$\%\^\&\*\(\)\-\_\=\+\?]*$
     MinLength: 8
     MaxLength: 32
-    NoEcho: True
+    NoEcho: true
   RedisServiceType:
     Type: String
-    Label: {'en': 'Service Type', 'zh-cn': '服务类型'}
+    Label:
+      en: Service Type
+      zh-cn: 服务类型
     Description:
-      en: 'Redis service type'
-      zh-cn: 'Redis 服务类型'
+      en: Redis service type
+      zh-cn: Redis 服务类型
     Default: ClusterIP
     AllowedValues:
       - ClusterIP
       - NodePort
   RedisStorageClass:
     Type: String
-    Label: {'en': 'Storage Class', 'zh-cn': '存储类'}
+    Label:
+      en: Storage Class
+      zh-cn: 存储类
     Description:
-      en: 'Use dynamic provisioning to create a persistent volume with the specified storage class. The storage class must be created in advance.'
-      zh-cn: '使用动态配置创建具有指定存储类的持久卷。存储类必须提前创建。'
+      en: Use dynamic provisioning to create a persistent volume with the specified storage class. The storage class must be created in advance.
+      zh-cn: 使用动态配置创建具有指定存储类的持久卷。存储类必须提前创建。
   RedisStorageSize:
     Type: Number
-    Label: {'en': 'Storage Size (GB)', 'zh-cn': '存储大小 (GB)'}
+    Label:
+      en: Storage Size (GB)
+      zh-cn: 存储大小 (GB)
     Description:
-      en: 'PVC size for each Redis pod.'
-      zh-cn: '每个 Redis pod 的 PVC 大小。'
+      en: PVC size for each Redis pod.
+      zh-cn: 每个 Redis pod 的 PVC 大小。
     Default: 10
-
-
 Conditions:
   CreateClusterCondition:
     Fn::Or:
@@ -589,7 +611,7 @@ Resources:
           name: ${IssuerName}
         redisOperator:
           replicaCount: ${ReplicaCount}
-      Namespace: kube-system
+      Namespace: redis-system
       ReleaseName: redis-operator
       WaitUntil:
         - ApiVersion: apps/v1
@@ -599,8 +621,7 @@ Resources:
           JsonPath: $.status.conditions[0].status
           FirstMatch: true
           Operator: Equals
-          Value: "True"
-
+          Value: 'True'
   ClusterApplication:
     Type: ALIYUN::CS::ClusterApplication
     DependsOn:
@@ -670,7 +691,6 @@ Resources:
           Operator: Equals
           Value: Ready
           FirstMatch: true
-
 Outputs:
   Endpoint:
     Description:
@@ -679,19 +699,23 @@ Outputs:
     Value:
       Fn::Select:
         - Fn::Sub:
-            - "${RedisArch}"
-            - RedisArch: !Ref RedisArch
+            - ${RedisArch}
+            - RedisArch:
+                Ref: RedisArch
         - sentinel:
             Fn::Sub:
-              - "rfs-${InstanceName}.${Namespace}:26379"
-              - InstanceName: !Ref InstanceName
-                Namespace: !Ref ALIYUN::StackName
+              - rfs-${InstanceName}.${Namespace}:26379
+              - InstanceName:
+                  Ref: InstanceName
+                Namespace:
+                  Ref: ALIYUN::StackName
           cluster:
             Fn::Sub:
-              - "drc-${InstanceName}.${Namespace}:6279"
-              - InstanceName: !Ref InstanceName
-                Namespace: !Ref ALIYUN::StackName
-
+              - drc-${InstanceName}.${Namespace}:6279
+              - InstanceName:
+                  Ref: InstanceName
+                Namespace:
+                  Ref: ALIYUN::StackName
   Instruction:
     Description:
       zh-cn: 使用说明
@@ -704,7 +728,6 @@ Outputs:
             Fn::GetAtt:
               - FluxHelmApplicationModule
               - HelmOutput
-
   UpdateDesc:
     Description:
       zh-cn: 更新说明
@@ -716,7 +739,7 @@ Outputs:
           helm upgrade ${ReleaseName} ${HelmRepo} --version ${HelmTag} -f values.yaml -n ${Namespace}
         - ReleaseName: redis-operator
           Namespace:
-            Ref: 'ALIYUN::StackName'
+            Ref: ALIYUN::StackName
           HelmRepo:
             Fn::Join:
               - ':'
@@ -731,8 +754,6 @@ Outputs:
               - Fn::Split:
                   - ':'
                   - '{{ computenest::helmchart::redis-operator }}'
-
-
 Metadata:
   ALIYUN::ROS::Interface:
     ParameterGroups:
@@ -776,26 +797,26 @@ Metadata:
         Label:
           en: Basic Configuration
           zh-cn: 基础配置
-
       - Parameters:
-         - ReplicaCount
-         - IssuerName
+          - ReplicaCount
+          - IssuerName
         Label:
           en: Operator Configuration
           zh-cn: Operator 配置
       - Parameters:
-         - InstanceName
-         - RedisArch
-         - RedisVersion
-         - RedisClusterShards
-         - RedisReplicasOfShard
-         - RedisContainerCpu
-         - RedisContainerMemory
-         - RedisCustomConfigs
-         - RedisDefaultPassword
-         - RedisServiceType
-         - RedisStorageClass
-         - RedisStorageSize
+          - InstanceName
+          - RedisArch
+          - RedisVersion
+          - RedisClusterShards
+          - RedisReplicasOfShard
+          - RedisContainerCpu
+          - RedisContainerMemory
+          - RedisCustomConfigs
+          - RedisDefaultPassword
+          - RedisServiceType
+          - RedisStorageClass
+          - RedisStorageSize
         Label:
           en: Instance Configuration
           zh-cn: 实例配置
+
