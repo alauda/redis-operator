@@ -30,6 +30,6 @@ Artifact:
       RepoType: Public
 HelmChartBuilder:
   HelmChart_1:
-    HelmChartPath: 'resources/artifact_resources/helm_chart/redis-operator-1.0.1-latest.tgz'
+    HelmChartPath: 'resources/artifact_resources/helm_chart/redis-operator-1.0.1-1.tgz'
     RepoName: redis-operator
-    Tag: 1.0.1-latest
+    Tag: 1.0.1-1
