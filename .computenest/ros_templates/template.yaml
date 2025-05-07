@@ -398,12 +398,6 @@ Parameters:
     Default: 1
     MinValue: 1
     MaxValue: 3
-  IssuerName:
-    Type: String
-    Label:
-      en: Webhook TLS Certificate Cluster Issuer Name
-      zh-cn: Webhook TLS 集群证书颁发者
-    Required: false
   InstallNamespace:
     Type: String
     Label:
@@ -510,6 +504,12 @@ Parameters:
     Description:
       en: Use dynamic provisioning to create a persistent volume with the specified storage class. The storage class must be created in advance.
       zh-cn: 使用动态配置创建具有指定存储类的持久卷。存储类必须提前创建。
+    AllowedValues:
+      - alicloud-disk-efficiency
+      - alicloud-disk-essd
+      - alicloud-disk-ssd
+      - alicloud-disk-topology-alltype
+    AllowedPattern: ^[a-zA-Z0-9\-\_]*$
   RedisStorageSize:
     Type: Number
     Label:
@@ -612,9 +612,6 @@ Resources:
           - ClusterId
       HelmChartUrl: '{{ computenest::helmchart::redis-operator }}'
       ChartValues:
-        issuer:
-          kind: ClusterIssuer
-          name: ${IssuerName}
         redisOperator:
           replicaCount: ${ReplicaCount}
       Namespace: redis-system
@@ -806,7 +803,6 @@ Metadata:
           zh-cn: 基础配置
       - Parameters:
           - ReplicaCount
-          - IssuerName
         Label:
           en: Operator Configuration
           zh-cn: Operator 配置
