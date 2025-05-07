@@ -3,6 +3,9 @@ apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: redis-operator-selfsigned-issuer
+  annotations:
+    "helm.sh/hook": "pre-install"
+    "helm.sh/hook-weight": "-1"
 spec:
   selfSigned: {}
 {{- end }}
@@ -11,6 +14,9 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: redis-operator-service-cert
+  annotations:
+    "helm.sh/hook": "pre-install"
+    "helm.sh/hook-weight": "0"
 spec:
   commonName: redis-operator-service.{{ .Release.Namespace }}
   dnsNames:
