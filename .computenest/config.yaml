@@ -15,7 +15,7 @@ Service:
   ServiceType: private
   ServiceInfo:
   - Locale: zh-CN
-    Name: test/redis-operator-cqyf
+    Name: alauda/redis-operator-m6gk
     ShortDescription: Servicedescription
     Image: 
       https://service-info-public.oss-cn-hangzhou.aliyuncs.com/1853370294850618/service-image/bfd30cc4-e959-4093-b5cb-77a05058b911.png
