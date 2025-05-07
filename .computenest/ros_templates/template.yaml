@@ -642,7 +642,7 @@ Resources:
             type: Opaque
             metadata:
               name: redis-${InstanceName}-${RedisDefaultPasswordSecretName}
-            data:
+            stringData:
               password: ${RedisDefaultPassword}
             ---
             apiVersion: middleware.alauda.io/v1
@@ -692,8 +692,7 @@ Resources:
             RedisStorageSize:
               Ref: RedisStorageSize
             RedisDefaultPassword:
-              Fn::Base64Encode
-                Ref: RedisDefaultPassword
+              Ref: RedisDefaultPassword
             RedisDefaultPasswordSecretName:
               Ref: RedisDefaultPasswordSecretName
       WaitUntil:
