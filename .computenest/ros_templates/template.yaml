@@ -393,8 +393,8 @@ Parameters:
   InstallNamespace:
     Type: String
     Label:
-      en: Redis Operator Namespace
-      zh-cn: Redis Operator 命名空间
+      en: Instance deploy namespace
+      zh-cn: 实例部署命名空间
     Default: default
     AllowedPattern: ^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$
     Required: true
@@ -476,6 +476,15 @@ Parameters:
     MinLength: 8
     MaxLength: 32
     NoEcho: true
+  RedisDefaultPasswordSecretName:
+    Type: String
+    AssociationProperty: AutoCompleteInput
+    AssociationPropertyMetadata:
+      Length: 8
+      Prefix: ""
+      CharacterClasses:
+        - Class: lowercase
+        - Class: number
   RedisServiceType:
     Type: String
     Label:
@@ -496,12 +505,9 @@ Parameters:
     Description:
       en: Use dynamic provisioning to create a persistent volume with the specified storage class. The storage class must be created in advance.
       zh-cn: 使用动态配置创建具有指定存储类的持久卷。存储类必须提前创建。
-    AllowedValues:
-      - alicloud-disk-efficiency
-      - alicloud-disk-essd
-      - alicloud-disk-ssd
-      - alicloud-disk-topology-alltype
     AllowedPattern: ^[a-zA-Z0-9\-\_]*$
+    Default: alicloud-disk-essd
+    Required: false
   RedisStorageSize:
     Type: Number
     Label:
@@ -630,6 +636,15 @@ Resources:
       YamlContent:
         Fn::Sub:
           - |
+            ---
+            apiVersion: v1
+            kind: Secret
+            type: Opaque
+            metadata:
+              name: redis-${InstanceName}-${RedisDefaultPasswordSecretName}
+            data:
+              password: ${RedisDefaultPassword}
+            ---
             apiVersion: middleware.alauda.io/v1
             kind: Redis
             metadata:
@@ -676,6 +691,11 @@ Resources:
               Ref: RedisStorageClass
             RedisStorageSize:
               Ref: RedisStorageSize
+            RedisDefaultPassword:
+              Fn::Base64Encode
+                Ref: RedisDefaultPassword
+            RedisDefaultPasswordSecretName:
+              Ref: RedisDefaultPasswordSecretName
       WaitUntil:
         - ApiVersion: middleware.alauda.io/v1
           Kind: Redis
@@ -807,3 +827,5 @@ Metadata:
         Label:
           en: Instance Configuration
           zh-cn: 实例配置
+    Hidden:
+      - RedisDefaultPasswordSecretName
