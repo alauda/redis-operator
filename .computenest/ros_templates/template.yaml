@@ -390,14 +390,6 @@ Parameters:
               - ${CsOptions}
               - ExistCs
     Default: 172.16.0.0/16
-  ReplicaCount:
-    Type: Number
-    Label:
-      en: Redis Operator Replica Count
-      zh-cn: Redis Operator 副本数
-    Default: 1
-    MinValue: 1
-    MaxValue: 3
   InstallNamespace:
     Type: String
     Label:
@@ -611,9 +603,7 @@ Resources:
           - AckOrAcsClusterModule
           - ClusterId
       HelmChartUrl: '{{ computenest::helmchart::redis-operator }}'
-      ChartValues:
-        redisOperator:
-          replicaCount: ${ReplicaCount}
+      ChartValues: {}
       Namespace: redis-system
       ReleaseName: redis-operator
       WaitUntil:
@@ -801,11 +791,6 @@ Metadata:
         Label:
           en: Basic Configuration
           zh-cn: 基础配置
-      - Parameters:
-          - ReplicaCount
-        Label:
-          en: Operator Configuration
-          zh-cn: Operator 配置
       - Parameters:
           - InstallNamespace
           - RedisArch
