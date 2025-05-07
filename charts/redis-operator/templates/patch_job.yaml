@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-post-install-job"
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "1" # Optional: for ordering if you have multiple post-install hooks
+    "helm.sh/hook-delete-policy": hook-succeeded # Optional: deletes the job if it completes successfully
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+spec:
+  template:
+    metadata:
+      name: "{{ .Release.Name }}-post-install-job-pod"
+      labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "redis.serviceAccountName" . }}
+      containers:
+        - name: patch-cert
+          image: bitnami/kubectl:1.32
+          command: ['sh', '-c']
+          args:
+            - |
+              echo "Post-install hook is running!"
+              export CA_BUNDLE=$(kubectl get secret redis-operator-service-cert -n {{ .Release.Namespace }} -o jsonpath='{.data.ca\.crt}')
+              kubectl patch validatingwebhookconfigurations vredis.middleware.alauda.io --type='json' -p="[{'op': 'replace', 'path': '/webhooks/0/clientConfig/caBundle', 'value':'${CA_BUNDLE}'},{'op': 'replace', 'path': '/webhooks/1/clientConfig/caBundle', 'value':'${CA_BUNDLE}'}]"
+              kubectl patch mutatingwebhookconfigurations mredis.middleware.alauda.io --type='json' -p="[{'op': 'replace', 'path': '/webhooks/0/clientConfig/caBundle', 'value':'${CA_BUNDLE}'},{'op': 'replace', 'path': '/webhooks/1/clientConfig/caBundle', 'value':'${CA_BUNDLE}'}]"
+
+              echo "Post-install commands finished."
