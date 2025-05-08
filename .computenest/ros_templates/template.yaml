@@ -651,7 +651,7 @@ Resources:
               name: ${InstanceName}
             spec:
               affinityPolicy: SoftAntiAffinity
-              arch: ${RedisVersion}
+              arch: ${RedisArch}
               customConfig: ${RedisCustomConfigs}
               expose:
                 type: ${RedisServiceType}
@@ -668,7 +668,7 @@ Resources:
                 requests:
                   cpu: ${RedisContainerCpu}
                   memory: ${RedisContainerMemory}
-              version: ${RedisVersion}
+              version: "${RedisVersion}"
           - InstanceName:
               Ref: ALIYUN::StackName
             RedisVersion:
