@@ -476,15 +476,6 @@ Parameters:
     MinLength: 8
     MaxLength: 32
     NoEcho: true
-  RedisDefaultPasswordSecretName:
-    Type: String
-    AssociationProperty: AutoCompleteInput
-    AssociationPropertyMetadata:
-      Length: 8
-      Prefix: ""
-      CharacterClasses:
-        - Class: lowercase
-        - Class: number
   RedisServiceType:
     Type: String
     Label:
@@ -517,6 +508,18 @@ Parameters:
       en: PVC size for each Redis pod.
       zh-cn: 每个 Redis pod 的 PVC 大小。
     Default: 10
+  RedisSecretName:
+    Type: String
+    AssociationProperty: AutoCompleteInput
+    AssociationPropertyMetadata:
+      Length: 8
+      Prefix:
+        Fn::Sub:
+          - "redis-${ALIYUN::StackName}-"
+      CharacterClasses:
+        - Class: lowercase
+        - Class: number
+
 Conditions:
   CreateClusterCondition:
     Fn::Or:
@@ -530,6 +533,7 @@ Conditions:
     Fn::Equals:
       - Ref: AckNetworkPlugin
       - flannel
+
 Resources:
   VpcModule:
     Condition: CreateClusterCondition
@@ -641,14 +645,14 @@ Resources:
             kind: Secret
             type: Opaque
             metadata:
-              name: redis-${InstanceName}-${RedisDefaultPasswordSecretName}
+              name: redis-${InstanceName}-${JobSuffix}
             stringData:
               password: ${RedisDefaultPassword}
             ---
             apiVersion: middleware.alauda.io/v1
             kind: Redis
             metadata:
-              name: ${InstanceName}
+              name: ${ALIYUN::StackName}
             spec:
               affinityPolicy: SoftAntiAffinity
               arch: ${RedisArch}
@@ -664,37 +668,17 @@ Resources:
               resources:
                 limits:
                   cpu: ${RedisContainerCpu}
-                  memory: ${RedisContainerMemory}
+                  memory: "${RedisContainerMemory}Gi"
                 requests:
                   cpu: ${RedisContainerCpu}
-                  memory: ${RedisContainerMemory}
+                  memory: "${RedisContainerMemory}Gi"
               version: "${RedisVersion}"
-          - InstanceName:
+          - RedisSecretName:
+              Ref: RedisSecretName
+            InstanceName:
               Ref: ALIYUN::StackName
-            RedisVersion:
-              Ref: RedisVersion
-            RedisArch:
-              Ref: RedisArch
-            RedisClusterShards:
-              Ref: RedisClusterShards
-            RedisReplicasOfShard:
-              Ref: RedisReplicasOfShard
-            RedisContainerCpu:
-              Ref: RedisContainerCpu
-            RedisContainerMemory:
-              Ref: RedisContainerMemory
-            RedisCustomConfigs:
-              Ref: RedisCustomConfigs
-            RedisServiceType:
-              Ref: RedisServiceType
-            RedisStorageClass:
-              Ref: RedisStorageClass
-            RedisStorageSize:
-              Ref: RedisStorageSize
-            RedisDefaultPassword:
-              Ref: RedisDefaultPassword
-            RedisDefaultPasswordSecretName:
-              Ref: RedisDefaultPasswordSecretName
+            JobSuffix:
+              Fn::FormatTime: "%d%H%M%S"
       WaitUntil:
         - ApiVersion: middleware.alauda.io/v1
           Kind: Redis
@@ -827,4 +811,4 @@ Metadata:
           en: Instance Configuration
           zh-cn: 实例配置
     Hidden:
-      - RedisDefaultPasswordSecretName
+      - RedisSecretName
