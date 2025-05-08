@@ -508,15 +508,6 @@ Parameters:
       en: PVC size for each Redis pod.
       zh-cn: 每个 Redis pod 的 PVC 大小。
     Default: 10
-  RedisSecretName:
-    Type: String
-    AssociationProperty: AutoCompleteInput
-    AssociationPropertyMetadata:
-      Length: 8
-      Prefix: "redis-${ALIYUN::StackName}-"
-      CharacterClasses:
-        - Class: lowercase
-        - Class: number
 
 Conditions:
   CreateClusterCondition:
@@ -643,7 +634,7 @@ Resources:
             kind: Secret
             type: Opaque
             metadata:
-              name: redis-${InstanceName}-${JobSuffix}
+              name: redis-${InstanceName}-${SecretSuffix}
             stringData:
               password: ${RedisDefaultPassword}
             ---
@@ -671,11 +662,9 @@ Resources:
                   cpu: ${RedisContainerCpu}
                   memory: "${RedisContainerMemory}Gi"
               version: "${RedisVersion}"
-          - RedisSecretName:
-              Ref: RedisSecretName
-            InstanceName:
+          - InstanceName:
               Ref: ALIYUN::StackName
-            JobSuffix:
+            SecretSuffix:
               Fn::FormatTime: "%d%H%M%S"
       WaitUntil:
         - ApiVersion: middleware.alauda.io/v1
@@ -808,5 +797,3 @@ Metadata:
         Label:
           en: Instance Configuration
           zh-cn: 实例配置
-    Hidden:
-      - RedisSecretName

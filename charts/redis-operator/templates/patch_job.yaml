@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "{{ .Release.Name }}-post-install-job"
+  name: "{{ .Release.Name }}-post-install-job-{{ lower (randAlphaNum 8) }}"
   annotations:
     "helm.sh/hook": post-install
     "helm.sh/hook-weight": "1" # Optional: for ordering if you have multiple post-install hooks
