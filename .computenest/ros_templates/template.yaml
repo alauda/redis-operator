@@ -648,6 +648,7 @@ Resources:
               customConfig: ${RedisCustomConfigs}
               expose:
                 type: ${RedisServiceType}
+              passwordSecret: redis-${InstanceName}-${SecretSuffix}
               replicas:
                 cluster:
                   shard: ${RedisClusterShards}
