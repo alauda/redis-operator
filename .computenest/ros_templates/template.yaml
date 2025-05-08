@@ -513,9 +513,7 @@ Parameters:
     AssociationProperty: AutoCompleteInput
     AssociationPropertyMetadata:
       Length: 8
-      Prefix:
-        Fn::Sub:
-          - "redis-${ALIYUN::StackName}-"
+      Prefix: "redis-${ALIYUN::StackName}-"
       CharacterClasses:
         - Class: lowercase
         - Class: number
