@@ -629,6 +629,7 @@ Resources:
           - AckOrAcsClusterModule
           - ClusterId
       HelmChartUrl: '{{ computenest::helmchart::redis-operator }}'
+      DockerConfigJson: '{{ computenest::helm::dockerconfigjson }}'
       ChartValues:
         skipDeployment:
           Fn::Equals:
@@ -637,7 +638,11 @@ Resources:
                 - Response
             - redis-operator
       Namespace: redis-system
-      ReleaseName: redis-operator-{{ ALIYUN::StackName }}
+      ReleaseName:
+        Fn::Sub:
+          - redis-operator-${name}
+          - Name:
+              Ref: ALIYUN::StackName
       WaitUntil:
         - ApiVersion: apps/v1
           Kind: Deployment
