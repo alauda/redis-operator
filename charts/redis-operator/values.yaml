@@ -5,6 +5,8 @@
 nameOverride: ""
 fullnameOverride: ""
 
+skipDeployment: false
+
 # Operator watch namespace
 watchNamespace: ""
 

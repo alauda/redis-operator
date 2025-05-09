@@ -1,3 +1,4 @@
+{{- if not .Values.skipDeployment }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -13,3 +14,4 @@ spec:
   selector:
     {{- include "redis.selectorLabels" . | nindent 8 }}
   type: ClusterIP
+{{- end }}

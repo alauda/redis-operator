@@ -1,4 +1,4 @@
----
+{{- if not .Values.skipDeployment }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -106,3 +106,4 @@ webhooks:
     resources:
     - redis
   sideEffects: None
+{{- end }}

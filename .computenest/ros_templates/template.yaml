@@ -390,7 +390,7 @@ Parameters:
               - ${CsOptions}
               - ExistCs
     Default: 172.16.0.0/16
-  InstallNamespace:
+  DeployNamespace:
     Type: String
     Label:
       en: Instance deploy namespace
@@ -426,6 +426,12 @@ Parameters:
     Default: 3
     MinValue: 3
     MaxValue: 25
+    AssociationPropertyMetadata:
+      Visible:
+        Condition:
+          Fn::Equals:
+            - ${RedisArch}
+            - "cluster"
   RedisReplicasOfShard:
     Type: Number
     Label:
@@ -464,11 +470,13 @@ Parameters:
       zh-cn: Redis 配置，详情参考 https://redis.io/docs/latest/operate/oss_and_stack/management/config/
     Default:
       save: 900 1 300 10 60 10000
+    AssociationProperty: Json
   RedisDefaultPassword:
     Type: String
     Label:
       en: Redis Default User Password
       zh-cn: Redis 默认用户密码
+    AssociationProperty: Password
     ConstraintDescription:
       en: Length 8-32, must contain three(letters, numbers, ~!@#$%^&*()-_=+? Special symbol in)
       zh-cn: 长度8-32，必须包含（字母、数字、 ~!@#$%^&*()-_=+? 中的特殊符号）
@@ -591,20 +599,45 @@ Resources:
         Ref: WorkerSystemDiskSize
       LoginPassword:
         Ref: LoginPassword
-  FluxHelmApplicationModule:
+ 
+  CheckIfRedisOperatorDeployed:
+    Type: DATASOURCE::CS::ClusterApplicationResources
     DependsOn:
       - AckOrAcsClusterModule
+    Properties:
+      ClusterId:
+        Fn::GetAtt:
+          - AckOrAcsClusterModule
+          - ClusterId
+      ApiVersion: apps/v1
+      Kind: Deployment
+      Name: redis-operator
+      Namespace: redis-system
+      JsonPath: $.metadata.name
+      RefreshOptions: Always
+
+  DeployRedisOperatorChart:
+    DependsOn:
+      - AckOrAcsClusterModule
+      - CheckIfRedisOperatorDeployed
     Type: MODULE::ACS::ComputeNest::FluxOciHelmDeploy
     Version: default
+    DeletionPolicy: Delete
     Properties:
       ClusterId:
         Fn::GetAtt:
           - AckOrAcsClusterModule
           - ClusterId
       HelmChartUrl: '{{ computenest::helmchart::redis-operator }}'
-      ChartValues: {}
+      ChartValues:
+        skipDeployment:
+          Fn::Equals:
+            - Fn::GetAtt:
+                - CheckIfRedisOperatorDeployed
+                - Response
+            - redis-operator
       Namespace: redis-system
-      ReleaseName: redis-operator
+      ReleaseName: redis-operator-{{ ALIYUN::StackName }}
       WaitUntil:
         - ApiVersion: apps/v1
           Kind: Deployment
@@ -614,10 +647,10 @@ Resources:
           FirstMatch: true
           Operator: Equals
           Value: 'True'
-  ClusterApplication:
+  DeployRedisInstance:
     Type: ALIYUN::CS::ClusterApplication
     DependsOn:
-      - FluxHelmApplicationModule
+      - DeployRedisOperatorChart
     Properties:
       ValidationMode: Basic
       ClusterId:
@@ -625,7 +658,7 @@ Resources:
           - AckOrAcsClusterModule
           - ClusterId
       DefaultNamespace:
-        Ref: InstallNamespace
+        Ref: DeployNamespace
       YamlContent:
         Fn::Sub:
           - |
@@ -654,7 +687,8 @@ Resources:
                   shard: ${RedisClusterShards}
                   slave: ${RedisReplicasOfShard}
                 sentinel:
-                  replicas: ${RedisReplicasOfShard}
+                  master: 1
+                  slave: ${RedisReplicasOfShard}
               resources:
                 limits:
                   cpu: ${RedisContainerCpu}
@@ -694,13 +728,13 @@ Outputs:
               - InstanceName:
                   Ref: ALIYUN::StackName
                 Namespace:
-                  Ref: InstallNamespace
+                  Ref: DeployNamespace
           cluster:
             Fn::Sub:
-              - drc-${InstanceName}.${Namespace}:6279
+              - ${InstanceName}.${Namespace}:6279
               - InstanceName:
                   Ref: ALIYUN::StackName
-                Namespace: InstallNamespace
+                Namespace: DeployNamespace
   Instruction:
     Description:
       zh-cn: 使用说明
@@ -711,7 +745,7 @@ Outputs:
           ${OutputData}
         - OutputData:
             Fn::GetAtt:
-              - FluxHelmApplicationModule
+              - DeployRedisOperatorChart
               - HelmOutput
   UpdateDesc:
     Description:
@@ -783,18 +817,18 @@ Metadata:
           en: Basic Configuration
           zh-cn: 基础配置
       - Parameters:
-          - InstallNamespace
+          - DeployNamespace
           - RedisArch
           - RedisVersion
           - RedisClusterShards
           - RedisReplicasOfShard
           - RedisContainerCpu
           - RedisContainerMemory
-          - RedisCustomConfigs
-          - RedisDefaultPassword
-          - RedisServiceType
           - RedisStorageClass
           - RedisStorageSize
+          - RedisCustomConfigs
+          - RedisServiceType
+          - RedisDefaultPassword
         Label:
           en: Instance Configuration
           zh-cn: 实例配置
