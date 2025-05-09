@@ -600,26 +600,9 @@ Resources:
       LoginPassword:
         Ref: LoginPassword
  
-  CheckIfRedisOperatorDeployed:
-    Type: DATASOURCE::CS::ClusterApplicationResources
-    DependsOn:
-      - AckOrAcsClusterModule
-    Properties:
-      ClusterId:
-        Fn::GetAtt:
-          - AckOrAcsClusterModule
-          - ClusterId
-      ApiVersion: apps/v1
-      Kind: Deployment
-      Name: redis-operator
-      Namespace: redis-system
-      JsonPath: $.metadata.name
-      RefreshOptions: Always
-
   DeployRedisOperatorChart:
     DependsOn:
       - AckOrAcsClusterModule
-      - CheckIfRedisOperatorDeployed
     Type: MODULE::ACS::ComputeNest::FluxOciHelmDeploy
     Version: default
     DeletionPolicy: Delete
@@ -630,13 +613,7 @@ Resources:
           - ClusterId
       HelmChartUrl: '{{ computenest::helmchart::redis-operator }}'
       DockerConfigJson: '{{ computenest::helm::dockerconfigjson }}'
-      ChartValues:
-        skipDeployment:
-          Fn::Equals:
-            - Fn::GetAtt:
-                - CheckIfRedisOperatorDeployed
-                - Response
-            - redis-operator
+      ChartValues: {}
       Namespace: redis-system
       ReleaseName:
         Fn::Sub:
