@@ -13,7 +13,7 @@ require (
 	github.com/onsi/gomega v1.36.2
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.57.0
 	github.com/samber/lo v1.47.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.11.0
 	github.com/urfave/cli/v2 v2.27.5
 	go.uber.org/zap v1.25.0
 	gotest.tools/v3 v3.0.3
