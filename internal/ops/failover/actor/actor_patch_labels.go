@@ -78,7 +78,7 @@ func (a *actorPatchLabels) Do(ctx context.Context, val types.RedisInstance) *act
 
 	for _, pod := range pods {
 		var node redis.RedisNode
-		slices.IndexFunc(inst.Nodes(), func(i redis.RedisNode) bool {
+		_ = slices.IndexFunc(inst.Nodes(), func(i redis.RedisNode) bool {
 			if i.GetName() == pod.GetName() {
 				node = i
 				return true
