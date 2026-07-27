@@ -11,7 +11,6 @@
 | 6.2.x         | Yes       |           |
 | 7.0.x         | Yes       |           |
 | 7.2.x         | Yes       | Yes       |
-| 7.4.x         | Yes       |           |
 
 ## Supported Valkey Versions
 

@@ -5310,14 +5310,13 @@ spec:
                     type: string
                 type: object
               version:
-                description: Version supports 5.0, 6.0, 6.2, 7.0, 7.2, 7.4
+                description: Version supports 5.0, 6.0, 6.2, 7.0, 7.2
                 enum:
                 - "5.0"
                 - "6.0"
                 - "6.2"
                 - "7.0"
                 - "7.2"
-                - "7.4"
                 type: string
             required:
             - arch

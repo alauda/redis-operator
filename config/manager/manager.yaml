@@ -86,14 +86,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.annotations['redisVersion72Version']
-            - name: REDIS_VERSION_7_4_IMAGE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.annotations['redisVersion74Image']
-            - name: REDIS_VERSION_7_4_VERSION
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.annotations['redisVersion74Version']
             - name: DEFAULT_EXPORTER_IMAGE
               valueFrom:
                 fieldRef:

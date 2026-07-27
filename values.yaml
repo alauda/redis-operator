@@ -19,6 +19,3 @@ global:
     - name: REDIS_VERSION_7_2_IMAGE
       image: redis
       tag: "7.2"
-    - name: REDIS_VERSION_7_4_IMAGE
-      image: redis
-      tag: "7.4"

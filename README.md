@@ -6,7 +6,7 @@
 
 * Standalone/Sentinel/Cluster redis arch supported.
 * Redis ACL supported.
-* Redis 6.0, 6.2, 7.0, 7.2, 7.4 supported (only versions 6.0 and 7.2 have undergone thorough testing. 5.0 also supported, but no acl supported).
+* Redis 6.0, 6.2, 7.0, 7.2 supported (only versions 6.0 and 7.2 have undergone thorough testing. 5.0 also supported, but no acl supported).
 * Nodeport/LB access supported; nodeport assignement also supported.
 * IPv4/IPv6 supported.
 * Online scale up/down.

@@ -62,8 +62,8 @@ type InstanceAccess struct {
 
 // RedisSpec defines the desired state of Redis
 type RedisSpec struct {
-	// Version supports 5.0, 6.0, 6.2, 7.0, 7.2, 7.4
-	// +kubebuilder:validation:Enum="5.0";"6.0";"6.2";"7.0";"7.2";"7.4"
+	// Version supports 5.0, 6.0, 6.2, 7.0, 7.2
+	// +kubebuilder:validation:Enum="5.0";"6.0";"6.2";"7.0";"7.2"
 	Version string `json:"version"`
 	// Arch supports cluster, sentinel
 	// +kubebuilder:validation:Enum="cluster";"sentinel";"standalone"

@@ -15,4 +15,3 @@ commonAnnotations:
   redisVersion6Image: 'build-harbor.alauda.cn/:'
   redisVersion62Image: 'build-harbor.alauda.cn/:'
   redisVersion72Image: 'build-harbor.alauda.cn/:'
-  redisVersion74Image: 'build-harbor.alauda.cn/:'
