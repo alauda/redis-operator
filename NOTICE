@@ -1,0 +1,59 @@
+Alauda Redis Operator
+Copyright 2023 The RedisOperator Authors.
+
+This product is developed and maintained by Alauda (https://github.com/alauda).
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this product except in compliance with the License. You may obtain a copy of the
+License in the accompanying LICENSE file or at:
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
+
+================================================================================
+Scope of this License
+================================================================================
+
+The Apache License, Version 2.0 applies to the source code in this repository
+and to the container images built from it. It does not apply to, and does not
+purport to relicense, any third-party software that this operator deploys,
+configures, or manages at runtime.
+
+This project does not contain, embed, fork, or distribute the source code of the
+Redis server. It deploys unmodified, separately published Redis container images
+that the user selects and obtains independently. Those images are governed by
+their own license terms, which the user is responsible for reviewing and
+complying with. The license of the Redis server and the license of this operator
+are separate and independent of one another.
+
+================================================================================
+Trademark notices
+================================================================================
+
+The trademarks below are the property of their respective owners. They appear in
+this project's name, documentation, and source code solely to identify the
+third-party software that this operator deploys and manages. This is referential
+(nominative) use, and it does not imply any sponsorship, endorsement,
+certification, or affiliation.
+
+Redis
+    Redis is a registered trademark of Redis Ltd. Any rights therein are
+    reserved to Redis Ltd. Any use by this project is for referential purposes
+    only and does not indicate any sponsorship, endorsement, or affiliation
+    between Redis Ltd. and this project.
+
+    This project is an independent work. It is not endorsed, sponsored,
+    supported, or certified by Redis Ltd.
+
+Valkey
+    Valkey and the Valkey logo are trademarks of LF Projects, LLC.
+
+Kubernetes
+    Kubernetes is a registered trademark of The Linux Foundation in the United
+    States and other countries.
+
+All other trademarks are the property of their respective owners.
