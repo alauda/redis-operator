@@ -86,7 +86,7 @@ func (a *actorHealPod) Do(ctx context.Context, val types.RedisInstance) *actor.A
 		}
 
 		var node rtypes.RedisSentinelNode
-		slices.IndexFunc(inst.Nodes(), func(n rtypes.RedisSentinelNode) bool {
+		_ = slices.IndexFunc(inst.Nodes(), func(n rtypes.RedisSentinelNode) bool {
 			if n.GetName() == pod.GetName() {
 				node = n
 				return true

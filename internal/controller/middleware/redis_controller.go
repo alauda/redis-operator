@@ -871,7 +871,7 @@ func (r *RedisReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&v1alpha1.DistributedRedisCluster{}).
 		Owns(&redisfailover.RedisFailover{}).
 		Watches(&redisfailover.RedisFailover{}, handler.Funcs{
-			CreateFunc: func(ctx context.Context, e event.CreateEvent, q workqueue.RateLimitingInterface) {
+			CreateFunc: func(ctx context.Context, e event.CreateEvent, q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 				for _, v := range e.Object.GetOwnerReferences() {
 					if v.Kind == "Redis" {
 						q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
@@ -888,7 +888,7 @@ func (r *RedisReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				}})
 			}}).
 		Watches(&v1alpha1.DistributedRedisCluster{}, handler.Funcs{
-			CreateFunc: func(ctx context.Context, e event.CreateEvent, q workqueue.RateLimitingInterface) {
+			CreateFunc: func(ctx context.Context, e event.CreateEvent, q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 				for _, v := range e.Object.GetOwnerReferences() {
 					if v.Kind == "Redis" {
 						q.Add(reconcile.Request{NamespacedName: types.NamespacedName{

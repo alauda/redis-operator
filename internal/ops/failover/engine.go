@@ -139,7 +139,7 @@ func (g *RuleEngine) isPatchLabelNeeded(ctx context.Context, inst types.RedisFai
 
 	for _, pod := range pods {
 		var node redis.RedisNode
-		slices.IndexFunc(inst.Nodes(), func(i redis.RedisNode) bool {
+		_ = slices.IndexFunc(inst.Nodes(), func(i redis.RedisNode) bool {
 			if i.GetName() == pod.GetName() {
 				node = i
 				return true
